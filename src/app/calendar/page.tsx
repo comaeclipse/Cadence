@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Calendar, Clock, TrendingUp, ChevronRight, X } from 'lucide-react';
 
-export default function Home() {
+export default function CalendarPage() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [incidents, setIncidents] = useState([
     {
@@ -292,13 +292,13 @@ export default function Home() {
       {/* iOS Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-stone-50 border-t border-stone-200 safe-area-inset-bottom">
         <div className="grid grid-cols-4 gap-1 px-4 py-2">
-          <Link href="/" className="flex flex-col items-center justify-center py-2 text-emerald-700">
+          <Link href="/" className="flex flex-col items-center justify-center py-2 text-gray-400 hover:text-gray-600">
             <TrendingUp className="w-6 h-6 mb-1" />
-            <span className="text-xs font-medium">Home</span>
+            <span className="text-xs">Home</span>
           </Link>
-          <Link href="/calendar" className="flex flex-col items-center justify-center py-2 text-gray-400 hover:text-gray-600">
+          <Link href="/calendar" className="flex flex-col items-center justify-center py-2 text-emerald-700">
             <Calendar className="w-6 h-6 mb-1" />
-            <span className="text-xs">Calendar</span>
+            <span className="text-xs font-medium">Calendar</span>
           </Link>
           <Link href="/reports" className="flex flex-col items-center justify-center py-2 text-gray-400 hover:text-gray-600">
             <TrendingUp className="w-6 h-6 mb-1" />
@@ -330,4 +330,3 @@ export default function Home() {
     </div>
   );
 }
-
