@@ -1,0 +1,103 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Child {
+  id        String     @id @default(cuid())
+  name      String
+  dob       DateTime?
+  avatarUrl String?
+  incidents Incident[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Incident {
+  id                 String       @id @default(cuid())
+  childId            String
+  child              Child        @relation(fields: [childId], references: [id], onDelete: Cascade)
+  timestamp          DateTime
+  behaviorId         String?
+  behavior           Behavior?    @relation(fields: [behaviorId], references: [id])
+  behaviorText       String?
+  intensity          Int // 1-5
+  durationSec        Int?
+  latencySec         Int?
+  locationId         String?
+  location           Location?    @relation(fields: [locationId], references: [id])
+  locationText       String?
+  functionHypothesis String // escape, attention, tangible, sensory, unknown
+  notes              String?
+  tags               String[]
+  antecedents        Antecedent[] @relation("IncidentAntecedents")
+  consequences       Consequence[] @relation("IncidentConsequences")
+  interventions      Intervention[] @relation("IncidentInterventions")
+  attachments        Attachment[]
+  settingEvents      Json? // Store as JSON for flexibility
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([childId])
+  @@index([timestamp])
+}
+
+model Behavior {
+  id        String     @id @default(cuid())
+  label     String
+  incidents Incident[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Antecedent {
+  id        String     @id @default(cuid())
+  label     String
+  incidents Incident[] @relation("IncidentAntecedents")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Consequence {
+  id        String     @id @default(cuid())
+  label     String
+  incidents Incident[] @relation("IncidentConsequences")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Intervention {
+  id        String     @id @default(cuid())
+  label     String
+  incidents Incident[] @relation("IncidentInterventions")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Location {
+  id        String     @id @default(cuid())
+  label     String
+  incidents Incident[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  type       String // photo, video, audio
+  uri        String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([incidentId])
+}
