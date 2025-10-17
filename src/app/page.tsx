@@ -18,6 +18,8 @@ interface Entry {
   duration?: string;
   trigger?: string;
   notes?: string;
+  consequence?: string;
+  customConsequence?: string;
   // Poop fields
   consistency?: string;
 }
@@ -74,12 +76,15 @@ export default function Home() {
     duration: '',
     trigger: '',
     notes: '',
-    consistency: ''
+    consistency: '',
+    consequence: '',
+    customConsequence: ''
   });
 
   const behaviorTypes = ['Meltdown', 'Sensory Overload', 'Anxiety', 'Aggression', 'Self-Stimulation', 'Other'];
   const severityLevels = ['Low', 'Medium', 'High'];
   const consistencyTypes = ['Soft', 'Normal', 'Hard', 'Formed', 'Loose', 'Watery'];
+  const consequenceOptions = ['Gave attention', 'Break/help', 'Preferred item', 'Redirected', 'Ignored', 'Emotion cards', 'other/custom'];
 
   const handleSubmit = () => {
     if (formData.entryType === 'incident' && formData.type && formData.severity) {
@@ -92,11 +97,13 @@ export default function Home() {
         duration: formData.duration,
         trigger: formData.trigger,
         notes: formData.notes,
+        consequence: formData.consequence,
+        customConsequence: formData.customConsequence,
         date: now.toISOString().split('T')[0],
         time: now.toTimeString().slice(0, 5)
       };
       setEntries([newEntry, ...entries]);
-      setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+      setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
       setExpansionLevel('collapsed');
     }
   };
@@ -111,7 +118,7 @@ export default function Home() {
       time: now.toTimeString().slice(0, 5)
     };
     setEntries([newEntry, ...entries]);
-    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
     setExpansionLevel('collapsed');
   };
 
@@ -171,7 +178,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -210,7 +217,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -236,6 +243,37 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Consequence */}
+              <div>
+                <label className="text-sm font-medium text-stone-100 mb-2 block">Consequence</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {consequenceOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setFormData({...formData, consequence: option, customConsequence: option === 'other/custom' ? formData.customConsequence : ''})}
+                      className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition ${
+                        formData.consequence === option
+                          ? 'border-stone-50 bg-stone-50 text-emerald-800'
+                          : 'border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+                {formData.consequence === 'other/custom' && (
+                  <div className="mt-2 animate-fadeIn">
+                    <input
+                      type="text"
+                      placeholder="Enter custom consequence..."
+                      value={formData.customConsequence}
+                      onChange={(e) => setFormData({...formData, customConsequence: e.target.value})}
+                      className="w-full px-3 py-2.5 border border-emerald-600 bg-stone-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-50 text-sm"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Severity */}
@@ -317,7 +355,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -387,15 +425,25 @@ export default function Home() {
 
               {entry.entryType === 'incident' && (
                 <div className="space-y-2 text-sm">
+                  {entry.consequence && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600 w-20">Consequence:</span>
+                      <span className="text-gray-900 font-medium">
+                        {entry.consequence === 'other/custom' && entry.customConsequence
+                          ? entry.customConsequence
+                          : entry.consequence}
+                      </span>
+                    </div>
+                  )}
                   {entry.trigger && (
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-600 w-16">Trigger:</span>
+                      <span className="text-gray-600 w-20">Trigger:</span>
                       <span className="text-gray-900 font-medium">{entry.trigger}</span>
                     </div>
                   )}
                   {entry.duration && (
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-600 w-16">Duration:</span>
+                      <span className="text-gray-600 w-20">Duration:</span>
                       <span className="text-gray-900 font-medium">{entry.duration}</span>
                     </div>
                   )}
