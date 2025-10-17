@@ -3,12 +3,8 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import type { CatalogItem } from "@/types/incident";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { uid } from "@/lib/id";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Plus, X } from "lucide-react";
 
 function CatalogEditor({ label, table, description }: { label: string; table: keyof typeof db; description: string }) {
   const [items, setItems] = useState<CatalogItem[]>([]);
@@ -35,95 +31,92 @@ function CatalogEditor({ label, table, description }: { label: string; table: ke
     setItems(await db[table].toArray());
   }
   return (
-    <Card className="border-2 shadow-lg">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>{label}</CardTitle>
-            <CardDescription className="mt-1">{description}</CardDescription>
-          </div>
-          <Badge variant="secondary">{items.length} items</Badge>
+    <div className="space-y-4">
+      <div className="bg-gradient-to-br from-emerald-700 to-emerald-800 rounded-xl p-4 shadow-lg">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-stone-50">{label}</h3>
+          <span className="px-2 py-1 rounded-full text-xs font-medium bg-stone-50 text-emerald-800">
+            {items.length} items
+          </span>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        <p className="text-xs text-stone-200 mb-3">{description}</p>
         <div className="flex gap-2">
-          <Input
+          <input
+            type="text"
             placeholder={`Add ${label.toLowerCase()}`}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
+            className="flex-1 px-4 py-3 border border-emerald-600 bg-stone-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-50 text-sm"
           />
-          <Button onClick={add}>Add</Button>
+          <button
+            onClick={add}
+            className="bg-stone-50 text-emerald-800 rounded-lg px-4 py-3 font-semibold flex items-center gap-2 active:bg-stone-100 transition"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
-        <div className="grid gap-2 max-h-96 overflow-y-auto">
-          {items.map((it) => (
-            <div key={it.id} className="flex items-center justify-between border-2 rounded-md px-4 py-3 text-sm bg-card hover:shadow-md transition-shadow">
-              <span className="font-medium">{it.label}</span>
-              <Button variant="outline" size="sm" onClick={() => remove(it.id)}>Remove</Button>
-            </div>
-          ))}
-          {items.length === 0 && (
-            <p className="text-sm text-center text-muted-foreground py-8">No items yet. Add your first {label.toLowerCase()} above.</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="space-y-2">
+        {items.map((it) => (
+          <div key={it.id} className="bg-stone-50 rounded-xl p-4 shadow-sm border border-stone-200 flex items-center justify-between">
+            <span className="font-medium text-gray-900">{it.label}</span>
+            <button
+              onClick={() => remove(it.id)}
+              className="p-2 text-gray-400 hover:text-red-600 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="bg-stone-50 rounded-xl p-8 shadow-sm border border-stone-200 text-center">
+            <p className="text-sm text-gray-600">No items yet. Add your first {label.toLowerCase()} above.</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
+import { MobileLayout } from "@/components/mobile-layout";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 export default function CatalogsPage() {
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Catalogs</h1>
-        <p className="text-muted-foreground mt-1">Manage reusable items for quick incident logging</p>
+    <MobileLayout title="Behavior Catalogs" subtitle="Manage reusable items for quick logging">
+      <div className="p-4">
+        <Tabs defaultValue="behaviors" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3 bg-stone-50 border border-stone-200">
+            <TabsTrigger value="behaviors" className="text-xs">Behaviors</TabsTrigger>
+            <TabsTrigger value="antecedents" className="text-xs">Antecedents</TabsTrigger>
+            <TabsTrigger value="locations" className="text-xs">Locations</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="behaviors">
+            <CatalogEditor
+              label="Behaviors"
+              table="behaviors"
+              description="Observable actions (hitting, yelling, eloping)"
+            />
+          </TabsContent>
+          <TabsContent value="antecedents">
+            <CatalogEditor
+              label="Antecedents"
+              table="antecedents"
+              description="Events that occur before the behavior"
+            />
+          </TabsContent>
+          <TabsContent value="locations">
+            <CatalogEditor
+              label="Locations"
+              table="locations"
+              description="Places where incidents occur"
+            />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <Tabs defaultValue="behaviors" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="behaviors">Behaviors</TabsTrigger>
-          <TabsTrigger value="antecedents">Antecedents</TabsTrigger>
-          <TabsTrigger value="consequences">Consequences</TabsTrigger>
-          <TabsTrigger value="interventions">Interventions</TabsTrigger>
-          <TabsTrigger value="locations">Locations</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="behaviors">
-          <CatalogEditor
-            label="Behaviors"
-            table="behaviors"
-            description="Observable actions and topographies (e.g., hitting, yelling, eloping)"
-          />
-        </TabsContent>
-        <TabsContent value="antecedents">
-          <CatalogEditor
-            label="Antecedents"
-            table="antecedents"
-            description="Events or conditions that occur before the behavior (triggers, setting events)"
-          />
-        </TabsContent>
-        <TabsContent value="consequences">
-          <CatalogEditor
-            label="Consequences"
-            table="consequences"
-            description="Events that follow the behavior (what happened after)"
-          />
-        </TabsContent>
-        <TabsContent value="interventions">
-          <CatalogEditor
-            label="Interventions"
-            table="interventions"
-            description="Strategies or actions taken in response (de-escalation, redirection, etc.)"
-          />
-        </TabsContent>
-        <TabsContent value="locations">
-          <CatalogEditor
-            label="Locations"
-            table="locations"
-            description="Places where incidents occur (classroom, playground, home, etc.)"
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
+    </MobileLayout>
   );
 }

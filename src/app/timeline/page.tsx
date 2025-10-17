@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import type { Incident } from "@/types/incident";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { MobileLayout } from "@/components/mobile-layout";
 
 export default function TimelinePage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -12,65 +11,72 @@ export default function TimelinePage() {
     db.incidents.orderBy('timestamp').reverse().toArray().then(setIncidents);
   }, []);
 
-  const getIntensityVariant = (intensity: number) => {
-    if (intensity >= 4) return "destructive";
-    if (intensity >= 3) return "default";
-    return "secondary";
+  const getSeverityColor = (intensity: number) => {
+    if (intensity >= 4) return 'bg-red-100 text-red-800';
+    if (intensity >= 3) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-green-100 text-green-800';
+  };
+
+  const getSeverityLabel = (intensity: number) => {
+    if (intensity >= 4) return 'High';
+    if (intensity >= 3) return 'Medium';
+    return 'Low';
   };
 
   return (
-    <div className="grid gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Timeline</h1>
-          <p className="text-muted-foreground mt-1">Chronological view of all incidents</p>
+    <MobileLayout title="Timeline" subtitle="Chronological view of all incidents">
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">All Incidents</h2>
+          <span className="text-sm text-gray-600">{incidents.length} Total</span>
         </div>
-        <Badge variant="outline" className="text-sm">
-          {incidents.length} Total
-        </Badge>
-      </div>
 
-      <div className="grid gap-4">
         {incidents.length === 0 && (
-          <Card className="border-2 shadow-md">
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">No incidents logged yet. Start by logging your first incident.</p>
-            </CardContent>
-          </Card>
+          <div className="bg-stone-50 rounded-xl p-8 shadow-sm border border-stone-200 text-center">
+            <p className="text-gray-600">No incidents logged yet. Start by logging your first incident.</p>
+          </div>
         )}
+
         {incidents.map((i) => (
-          <Card key={i.id} className="border-2 shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{new Date(i.timestamp).toLocaleString()}</CardTitle>
-                  <CardDescription className="mt-1">{i.behaviorText}</CardDescription>
-                </div>
-                <Badge variant={getIntensityVariant(i.intensity)}>
-                  Intensity {i.intensity}
-                </Badge>
+          <div key={i.id} className="bg-stone-50 rounded-xl p-4 shadow-sm border border-stone-200">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-gray-900">{i.behaviorText || 'Incident'}</h3>
+                <p className="text-xs text-gray-600 mt-1">
+                  {new Date(i.timestamp).toLocaleString()}
+                </p>
               </div>
-            </CardHeader>
-            <CardContent className="text-sm space-y-2">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="font-normal">
-                  {i.functionHypothesis}
-                </Badge>
-                {i.locationText && (
-                  <Badge variant="outline" className="font-normal">
-                    {i.locationText}
-                  </Badge>
-                )}
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(i.intensity)}`}>
+                {getSeverityLabel(i.intensity)}
+              </span>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600 w-20">Function:</span>
+                <span className="text-gray-900 font-medium capitalize">{i.functionHypothesis}</span>
               </div>
-              {i.notes && (
-                <div className="mt-3 p-3 rounded-md bg-muted/50 text-muted-foreground">
-                  {i.notes}
+              {i.locationText && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600 w-20">Location:</span>
+                  <span className="text-gray-900 font-medium">{i.locationText}</span>
                 </div>
               )}
-            </CardContent>
-          </Card>
+              {i.durationSec && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600 w-20">Duration:</span>
+                  <span className="text-gray-900 font-medium">{Math.floor(i.durationSec / 60)}m {i.durationSec % 60}s</span>
+                </div>
+              )}
+              {i.notes && (
+                <div className="pt-2 border-t border-stone-200">
+                  <p className="text-gray-700 text-xs">{i.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
         ))}
       </div>
-    </div>
+    </MobileLayout>
   );
 }
