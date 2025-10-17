@@ -13,6 +13,7 @@ import type { Incident } from "@/types/incident";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { ChildSelect } from "./child-select";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 const schema = z.object({
   childId: z.string().min(1, "Select or add a child"),
@@ -111,9 +112,12 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
               <FormItem>
                 <FormLabel>Time</FormLabel>
                 <FormControl>
-                  <Input type="datetime-local" value={toLocalInput(field.value)} onChange={(e) => field.onChange(fromLocalInput(e.target.value))} />
+                  <DateTimePicker
+                    date={field.value ? new Date(field.value) : undefined}
+                    onChange={(date) => field.onChange(date.toISOString())}
+                  />
                 </FormControl>
-                <FormDescription>Adjust if logging after the fact.</FormDescription>
+                <FormDescription>Tap to adjust date/time</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -237,18 +241,4 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
       </form>
     </Form>
   );
-}
-
-function toLocalInput(iso: string) {
-  const d = new Date(iso);
-  const off = d.getTimezoneOffset();
-  const local = new Date(d.getTime() - off * 60_000);
-  return local.toISOString().slice(0, 16);
-}
-
-function fromLocalInput(local: string) {
-  const d = new Date(local);
-  const off = d.getTimezoneOffset();
-  const utc = new Date(d.getTime() + off * 60_000);
-  return utc.toISOString();
 }
