@@ -9,8 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { db } from "@/lib/db";
-import { uid } from "@/lib/id";
 import type { Incident } from "@/types/incident";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
@@ -50,27 +48,42 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
   }, [childId, form]);
 
   async function onSubmit(values: FormValues) {
-    const data: Incident = {
-      id: uid(),
-      childId: values.childId,
-      timestamp: values.timestamp,
-      behaviorText: values.behaviorText,
-      intensity: values.intensity as 1 | 2 | 3 | 4 | 5,
-      durationSec: values.durationSec ? Number(values.durationSec) : undefined,
-      latencySec: values.latencySec ? Number(values.latencySec) : undefined,
-      functionHypothesis: values.functionHypothesis,
-      locationText: values.locationText,
-      notes: values.notes,
-    };
-    await db.incidents.add(data);
-    toast.success("Incident saved");
-    form.reset({
-      ...form.getValues(),
-      behaviorText: "",
-      notes: "",
-      timestamp: new Date().toISOString(),
-    });
-    onSaved?.(data);
+    try {
+      const response = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          childId: values.childId,
+          timestamp: values.timestamp,
+          behaviorText: values.behaviorText,
+          intensity: values.intensity,
+          durationSec: values.durationSec ? Number(values.durationSec) : undefined,
+          latencySec: values.latencySec ? Number(values.latencySec) : undefined,
+          functionHypothesis: values.functionHypothesis,
+          locationText: values.locationText,
+          notes: values.notes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save incident');
+      }
+
+      const data = await response.json();
+      toast.success("Incident saved");
+      form.reset({
+        ...form.getValues(),
+        behaviorText: "",
+        notes: "",
+        timestamp: new Date().toISOString(),
+      });
+      onSaved?.(data);
+    } catch (error) {
+      console.error('Error saving incident:', error);
+      toast.error("Failed to save incident");
+    }
   }
 
   return (
