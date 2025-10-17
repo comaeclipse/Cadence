@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { Plus, Calendar, Clock, TrendingUp, ChevronRight, X } from 'lucide-react';
+import { Plus, Calendar, Clock, X } from 'lucide-react';
+import { MobileLayout } from '@/components/mobile-layout';
 
 export default function Home() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -75,26 +75,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-100 pb-20">
-      {/* iOS Status Bar */}
-      <div className="bg-stone-50 pt-3 pb-2 px-6">
-        <div className="flex justify-between items-center text-sm">
-          <span className="font-semibold">9:41</span>
-          <div className="flex gap-1 items-center">
-            <div className="w-4 h-3 border border-black rounded-sm relative">
-              <div className="absolute inset-0.5 bg-black rounded-sm"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="bg-stone-50 border-b border-stone-200 px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">Behavior Tracker</h1>
-        <p className="text-sm text-gray-600 mt-1">Understanding patterns together</p>
-      </div>
-
-      {/* Main Content */}
+    <MobileLayout>
       <div className="p-4 space-y-4">
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
@@ -288,46 +269,7 @@ export default function Home() {
           ))}
         </div>
       </div>
-
-      {/* iOS Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-stone-50 border-t border-stone-200 safe-area-inset-bottom">
-        <div className="grid grid-cols-4 gap-1 px-4 py-2">
-          <Link href="/" className="flex flex-col items-center justify-center py-2 text-emerald-700">
-            <TrendingUp className="w-6 h-6 mb-1" />
-            <span className="text-xs font-medium">Home</span>
-          </Link>
-          <Link href="/calendar" className="flex flex-col items-center justify-center py-2 text-gray-400 hover:text-gray-600">
-            <Calendar className="w-6 h-6 mb-1" />
-            <span className="text-xs">Calendar</span>
-          </Link>
-          <Link href="/reports" className="flex flex-col items-center justify-center py-2 text-gray-400 hover:text-gray-600">
-            <TrendingUp className="w-6 h-6 mb-1" />
-            <span className="text-xs">Insights</span>
-          </Link>
-          <Link href="/settings" className="flex flex-col items-center justify-center py-2 text-gray-400 hover:text-gray-600">
-            <ChevronRight className="w-6 h-6 mb-1" />
-            <span className="text-xs">More</span>
-          </Link>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.4s ease-out forwards;
-        }
-      `}</style>
-    </div>
+    </MobileLayout>
   );
 }
 

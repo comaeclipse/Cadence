@@ -1,26 +1,18 @@
 "use client";
 
 import { IncidentForm } from "@/components/incident-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MobileLayout } from "@/components/mobile-layout";
 
 export default function LogPage() {
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Log Incident</h1>
-        <p className="text-muted-foreground mt-1">Record a new behavioral incident</p>
-      </div>
-
-      <Card className="border-2 shadow-lg">
-        <CardHeader>
-          <CardTitle>Incident Details</CardTitle>
-          <CardDescription>Capture all relevant information about the incident</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <MobileLayout title="Log Incident" subtitle="Record a new behavioral incident">
+      <div className="p-4">
+        <div className="bg-stone-50 rounded-xl p-4 shadow-sm border border-stone-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Incident Details</h2>
           <IncidentForm />
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </MobileLayout>
   );
 }
 
