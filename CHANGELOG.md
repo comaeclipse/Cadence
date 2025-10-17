@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### 2025-10-17 - Fix Calendar View
+
+#### Fixed
+- Calendar page now shows actual month calendar grid with 30+ days
+- Days with incidents are highlighted in emerald green
+- Click day to expand accordion showing incident details for that date
+- Added month navigation (previous/next)
+- Added visual legend for calendar indicators
+
 ### 2025-10-17 - Mobile-Only iOS Design
 
 #### Added
