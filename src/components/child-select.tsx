@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { db } from "@/lib/db";
 import type { ChildProfile } from "@/types/incident";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { uid } from "@/lib/id";
 import { toast } from "sonner";
 
 export function ChildSelect({ value, onChange }: { value?: string; onChange: (id: string) => void }) {
@@ -15,7 +13,13 @@ export function ChildSelect({ value, onChange }: { value?: string; onChange: (id
   const [newName, setNewName] = useState("");
 
   useEffect(() => {
-    db.children.toArray().then(setChildren);
+    fetch('/api/children')
+      .then(res => res.json())
+      .then(setChildren)
+      .catch(err => {
+        console.error('Error fetching children:', err);
+        toast.error('Failed to load children');
+      });
   }, []);
 
   const selected = useMemo(() => children.find((c) => c.id === value), [children, value]);
@@ -23,14 +27,31 @@ export function ChildSelect({ value, onChange }: { value?: string; onChange: (id
   async function addChild() {
     const name = newName.trim();
     if (!name) return;
-    const id = uid();
-    await db.children.add({ id, name });
-    const list = await db.children.toArray();
-    setChildren(list);
-    onChange(id);
-    setAdding(false);
-    setNewName("");
-    toast.success("Child added");
+
+    try {
+      const response = await fetch('/api/children', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add child');
+      }
+
+      const newChild = await response.json();
+      const updatedChildren = await fetch('/api/children').then(res => res.json());
+      setChildren(updatedChildren);
+      onChange(newChild.id);
+      setAdding(false);
+      setNewName("");
+      toast.success("Child added");
+    } catch (error) {
+      console.error('Error adding child:', error);
+      toast.error('Failed to add child');
+    }
   }
 
   if (adding) {
