@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Plus, Calendar, Clock, X } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
 
@@ -25,6 +25,7 @@ interface Entry {
 }
 
 export default function Home() {
+  const consequenceRef = useRef<HTMLDivElement>(null);
   const [expansionLevel, setExpansionLevel] = useState<ExpansionLevel>('collapsed');
   const [entries, setEntries] = useState<Entry[]>([
     {
@@ -232,7 +233,12 @@ export default function Home() {
                   {behaviorTypes.map((type) => (
                     <button
                       key={type}
-                      onClick={() => setFormData({...formData, type})}
+                      onClick={() => {
+                        setFormData({...formData, type});
+                        setTimeout(() => {
+                          consequenceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                      }}
                       className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition ${
                         formData.type === type
                           ? 'border-stone-50 bg-stone-50 text-emerald-800'
@@ -246,7 +252,7 @@ export default function Home() {
               </div>
 
               {/* Consequence */}
-              <div>
+              <div ref={consequenceRef}>
                 <label className="text-sm font-medium text-stone-100 mb-2 block">Consequence</label>
                 <div className="grid grid-cols-2 gap-2">
                   {consequenceOptions.map((option) => (
