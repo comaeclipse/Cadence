@@ -1,16 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-type CatalogType = 'behaviors' | 'antecedents' | 'consequences' | 'interventions' | 'locations';
-
-const catalogModelMap = {
-  behaviors: prisma.behavior,
-  antecedents: prisma.antecedent,
-  consequences: prisma.consequence,
-  interventions: prisma.intervention,
-  locations: prisma.location,
-};
-
 // GET /api/catalogs/[type] - List catalog items
 export async function GET(
   request: NextRequest,
@@ -19,19 +9,29 @@ export async function GET(
   try {
     const { type } = await params;
 
-    if (!(type in catalogModelMap)) {
-      return NextResponse.json(
-        { error: 'Invalid catalog type' },
-        { status: 400 }
-      );
+    let items;
+    switch (type) {
+      case 'behaviors':
+        items = await prisma.behavior.findMany({ orderBy: { label: 'asc' } });
+        break;
+      case 'antecedents':
+        items = await prisma.antecedent.findMany({ orderBy: { label: 'asc' } });
+        break;
+      case 'consequences':
+        items = await prisma.consequence.findMany({ orderBy: { label: 'asc' } });
+        break;
+      case 'interventions':
+        items = await prisma.intervention.findMany({ orderBy: { label: 'asc' } });
+        break;
+      case 'locations':
+        items = await prisma.location.findMany({ orderBy: { label: 'asc' } });
+        break;
+      default:
+        return NextResponse.json(
+          { error: 'Invalid catalog type' },
+          { status: 400 }
+        );
     }
-
-    const model = catalogModelMap[type as CatalogType];
-    const items = await model.findMany({
-      orderBy: {
-        label: 'asc',
-      },
-    });
 
     return NextResponse.json(items);
   } catch (error) {
@@ -52,19 +52,29 @@ export async function POST(
     const { type } = await params;
     const body = await request.json();
 
-    if (!(type in catalogModelMap)) {
-      return NextResponse.json(
-        { error: 'Invalid catalog type' },
-        { status: 400 }
-      );
+    let item;
+    switch (type) {
+      case 'behaviors':
+        item = await prisma.behavior.create({ data: { label: body.label } });
+        break;
+      case 'antecedents':
+        item = await prisma.antecedent.create({ data: { label: body.label } });
+        break;
+      case 'consequences':
+        item = await prisma.consequence.create({ data: { label: body.label } });
+        break;
+      case 'interventions':
+        item = await prisma.intervention.create({ data: { label: body.label } });
+        break;
+      case 'locations':
+        item = await prisma.location.create({ data: { label: body.label } });
+        break;
+      default:
+        return NextResponse.json(
+          { error: 'Invalid catalog type' },
+          { status: 400 }
+        );
     }
-
-    const model = catalogModelMap[type as CatalogType];
-    const item = await model.create({
-      data: {
-        label: body.label,
-      },
-    });
 
     return NextResponse.json(item, { status: 201 });
   } catch (error) {
