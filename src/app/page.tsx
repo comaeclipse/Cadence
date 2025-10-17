@@ -4,11 +4,30 @@ import React, { useState } from 'react';
 import { Plus, Calendar, Clock, X } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
 
+type ExpansionLevel = 'collapsed' | 'category' | 'incident' | 'poop';
+type EntryType = 'incident' | 'poop';
+
+interface Entry {
+  id: number;
+  entryType: EntryType;
+  date: string;
+  time: string;
+  // Incident fields
+  type?: string;
+  severity?: string;
+  duration?: string;
+  trigger?: string;
+  notes?: string;
+  // Poop fields
+  consistency?: string;
+}
+
 export default function Home() {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [incidents, setIncidents] = useState([
+  const [expansionLevel, setExpansionLevel] = useState<ExpansionLevel>('collapsed');
+  const [entries, setEntries] = useState<Entry[]>([
     {
       id: 1,
+      entryType: 'incident',
       type: 'Meltdown',
       severity: 'High',
       duration: '15 min',
@@ -19,6 +38,7 @@ export default function Home() {
     },
     {
       id: 2,
+      entryType: 'incident',
       type: 'Sensory Overload',
       severity: 'Medium',
       duration: '8 min',
@@ -29,6 +49,14 @@ export default function Home() {
     },
     {
       id: 3,
+      entryType: 'poop',
+      consistency: 'Normal',
+      date: '2025-10-14',
+      time: '09:30'
+    },
+    {
+      id: 4,
+      entryType: 'incident',
       type: 'Anxiety',
       severity: 'Low',
       duration: '5 min',
@@ -40,29 +68,51 @@ export default function Home() {
   ]);
 
   const [formData, setFormData] = useState({
+    entryType: '' as EntryType | '',
     type: '',
     severity: '',
     duration: '',
     trigger: '',
-    notes: ''
+    notes: '',
+    consistency: ''
   });
 
   const behaviorTypes = ['Meltdown', 'Sensory Overload', 'Anxiety', 'Aggression', 'Self-Stimulation', 'Other'];
   const severityLevels = ['Low', 'Medium', 'High'];
+  const consistencyTypes = ['Soft', 'Normal', 'Hard', 'Formed', 'Loose', 'Watery'];
 
   const handleSubmit = () => {
-    if (formData.type && formData.severity) {
+    if (formData.entryType === 'incident' && formData.type && formData.severity) {
       const now = new Date();
-      const newIncident = {
-        id: incidents.length + 1,
-        ...formData,
+      const newEntry: Entry = {
+        id: entries.length + 1,
+        entryType: 'incident',
+        type: formData.type,
+        severity: formData.severity,
+        duration: formData.duration,
+        trigger: formData.trigger,
+        notes: formData.notes,
         date: now.toISOString().split('T')[0],
         time: now.toTimeString().slice(0, 5)
       };
-      setIncidents([newIncident, ...incidents]);
-      setFormData({ type: '', severity: '', duration: '', trigger: '', notes: '' });
-      setIsExpanded(false);
+      setEntries([newEntry, ...entries]);
+      setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+      setExpansionLevel('collapsed');
     }
+  };
+
+  const handlePoopSubmit = (consistency: string) => {
+    const now = new Date();
+    const newEntry: Entry = {
+      id: entries.length + 1,
+      entryType: 'poop',
+      consistency,
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().slice(0, 5)
+    };
+    setEntries([newEntry, ...entries]);
+    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+    setExpansionLevel('collapsed');
   };
 
   const getSeverityColor = (severity: string) => {
@@ -80,7 +130,7 @@ export default function Home() {
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-stone-50 rounded-xl p-4 shadow-sm border border-stone-200">
-            <div className="text-2xl font-bold text-gray-900">{incidents.length}</div>
+            <div className="text-2xl font-bold text-gray-900">{entries.length}</div>
             <div className="text-xs text-gray-600 mt-1">This Week</div>
           </div>
           <div className="bg-stone-50 rounded-xl p-4 shadow-sm border border-stone-200">
@@ -93,36 +143,74 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Expandable Log Incident Section */}
-        <div 
+        {/* Expandable Add Section */}
+        <div
           className={`bg-gradient-to-br from-emerald-700 to-emerald-800 rounded-xl shadow-lg transition-all duration-500 ease-in-out overflow-hidden ${
-            isExpanded ? 'p-6' : 'p-4'
+            expansionLevel !== 'collapsed' ? 'p-6' : 'p-4'
           }`}
           style={{
-            maxHeight: isExpanded ? '2000px' : '70px',
+            maxHeight: expansionLevel === 'collapsed' ? '70px' : '2000px',
           }}
         >
-          {/* Button State */}
-          {!isExpanded && (
-            <button 
-              onClick={() => setIsExpanded(true)}
+          {/* Level 0: Collapsed - "add..." Button */}
+          {expansionLevel === 'collapsed' && (
+            <button
+              onClick={() => setExpansionLevel('category')}
               className="w-full bg-stone-50 text-emerald-800 rounded-lg py-3 px-4 font-semibold flex items-center justify-center gap-2 active:bg-stone-100 transition"
             >
               <Plus className="w-5 h-5" />
-              Log New Incident
+              add...
             </button>
           )}
 
-          {/* Expanded Form State */}
-          {isExpanded && (
+          {/* Level 1: Category Selection */}
+          {expansionLevel === 'category' && (
             <div className="space-y-4 animate-fadeIn">
-              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-stone-50">What would you like to log?</h3>
+                <button
+                  onClick={() => {
+                    setExpansionLevel('collapsed');
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+                  }}
+                  className="text-stone-50 hover:text-stone-200 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => {
+                    setFormData({...formData, entryType: 'incident'});
+                    setExpansionLevel('incident');
+                  }}
+                  className="py-8 px-4 rounded-lg border-2 border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50 text-lg font-semibold transition"
+                >
+                  Incident
+                </button>
+                <button
+                  onClick={() => {
+                    setFormData({...formData, entryType: 'poop'});
+                    setExpansionLevel('poop');
+                  }}
+                  className="py-8 px-4 rounded-lg border-2 border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50 text-lg font-semibold transition"
+                >
+                  Poop
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Level 2a: Incident Form */}
+          {expansionLevel === 'incident' && (
+            <div className="space-y-4 animate-fadeIn">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-stone-50">Log Incident</h3>
-                <button 
+                <button
                   onClick={() => {
-                    setIsExpanded(false);
-                    setFormData({ type: '', severity: '', duration: '', trigger: '', notes: '' });
+                    setExpansionLevel('collapsed');
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -220,51 +308,104 @@ export default function Home() {
               </button>
             </div>
           )}
+
+          {/* Level 2b: Poop Form */}
+          {expansionLevel === 'poop' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-stone-50">Log Poop</h3>
+                <button
+                  onClick={() => {
+                    setExpansionLevel('collapsed');
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '' });
+                  }}
+                  className="text-stone-50 hover:text-stone-200 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Consistency Type */}
+              <div>
+                <label className="text-sm font-medium text-stone-100 mb-2 block">Consistency *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {consistencyTypes.map((consistency) => (
+                    <button
+                      key={consistency}
+                      onClick={() => handlePoopSubmit(consistency)}
+                      className="py-3 px-4 rounded-lg border-2 border-amber-600 bg-amber-700/30 text-stone-100 hover:bg-amber-700/50 active:bg-stone-50 active:text-amber-800 text-sm font-medium transition"
+                    >
+                      {consistency}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Recent Incidents */}
+        {/* Recent Entries */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Incidents</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Recent Entries</h2>
             <button className="text-sm text-emerald-700 font-medium">View All</button>
           </div>
 
-          {incidents.map((incident) => (
-            <div key={incident.id} className="bg-stone-50 rounded-xl p-4 shadow-sm border border-stone-200">
+          {entries.map((entry) => (
+            <div key={entry.id} className={`rounded-xl p-4 shadow-sm border ${
+              entry.entryType === 'incident'
+                ? 'bg-stone-50 border-stone-200'
+                : 'bg-amber-50 border-amber-200'
+            }`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{incident.type}</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    {entry.entryType === 'incident' ? entry.type : `Poop - ${entry.consistency}`}
+                  </h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-gray-600 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {incident.date}
+                      {entry.date}
                     </span>
                     <span className="text-xs text-gray-600 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {incident.time}
+                      {entry.time}
                     </span>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(incident.severity)}`}>
-                  {incident.severity}
-                </span>
-              </div>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600 w-16">Trigger:</span>
-                  <span className="text-gray-900 font-medium">{incident.trigger}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600 w-16">Duration:</span>
-                  <span className="text-gray-900 font-medium">{incident.duration}</span>
-                </div>
-                {incident.notes && (
-                  <div className="pt-2 border-t border-stone-200">
-                    <p className="text-gray-700 text-xs">{incident.notes}</p>
-                  </div>
+                {entry.entryType === 'incident' && entry.severity && (
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(entry.severity)}`}>
+                    {entry.severity}
+                  </span>
+                )}
+                {entry.entryType === 'poop' && (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    Poop
+                  </span>
                 )}
               </div>
+
+              {entry.entryType === 'incident' && (
+                <div className="space-y-2 text-sm">
+                  {entry.trigger && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600 w-16">Trigger:</span>
+                      <span className="text-gray-900 font-medium">{entry.trigger}</span>
+                    </div>
+                  )}
+                  {entry.duration && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600 w-16">Duration:</span>
+                      <span className="text-gray-900 font-medium">{entry.duration}</span>
+                    </div>
+                  )}
+                  {entry.notes && (
+                    <div className="pt-2 border-t border-stone-200">
+                      <p className="text-gray-700 text-xs">{entry.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
