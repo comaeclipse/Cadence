@@ -1,4 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cadence
+
+A modern behavior tracking application designed to help users monitor and log their daily behaviors and habits.
+
+## Overview
+
+Cadence is a mobile-first web application built with Next.js that provides a clean, iOS-style interface for tracking behaviors throughout the day. The app features an intuitive calendar view and streamlined data entry forms to make behavior logging quick and effortless.
+
+## Purpose
+
+The goal of Cadence is to make behavior tracking simple and accessible. Whether you're monitoring habits, tracking mood patterns, or logging specific activities, Cadence provides the tools to capture this data consistently and review it over time.
+
+## Features
+
+- **iOS-Style Design**: Clean, familiar interface optimized for mobile devices
+- **Calendar View**: Easy navigation through dates to view and log behaviors
+- **Quick Entry Forms**: Expanding accordion-style forms for efficient data entry
+- **Responsive Layout**: Works seamlessly across different screen sizes
+
+## Tech Stack
+
+- Next.js 15
+- React 19
+- TypeScript
+- Tailwind CSS
 
 ## Getting Started
 
@@ -6,31 +30,14 @@ First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Roadmap
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ ] Native iOS application
+- [ ] Native Android application
+- [ ] Data export functionality
+- [ ] Analytics and insights dashboard
+- [ ] Multi-user support
