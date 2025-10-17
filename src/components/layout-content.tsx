@@ -5,9 +5,9 @@ import { AppHeader } from "./app-header";
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isHomePage = pathname === "/";
+  const isMobileStylePage = pathname === "/" || pathname === "/calendar";
 
-  if (isHomePage) {
+  if (isMobileStylePage) {
     return <>{children}</>;
   }
 
