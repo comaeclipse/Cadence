@@ -164,7 +164,7 @@ export default function Home() {
           {expansionLevel === 'collapsed' && (
             <button
               onClick={() => setExpansionLevel('category')}
-              className="w-full bg-stone-50 text-emerald-800 rounded-lg py-3 px-4 font-semibold flex items-center justify-center gap-2 active:bg-stone-100 transition"
+              className="w-full bg-stone-50 text-emerald-800 rounded-lg py-2 px-4 font-semibold flex items-center justify-center gap-2 active:bg-stone-100 transition"
             >
               <Plus className="w-5 h-5" />
               add...
