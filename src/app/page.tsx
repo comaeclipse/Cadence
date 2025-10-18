@@ -3,6 +3,8 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Calendar, Clock, X } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { DurationPicker } from '@/components/ui/duration-picker';
 
 type ExpansionLevel = 'collapsed' | 'category' | 'incident' | 'poop';
 type EntryType = 'incident' | 'poop';
@@ -75,11 +77,13 @@ export default function Home() {
     type: '',
     severity: '',
     duration: '',
+    durationSeconds: 0,
     trigger: '',
     notes: '',
     consistency: '',
     consequence: '',
-    customConsequence: ''
+    customConsequence: '',
+    timestamp: new Date()
   });
 
   const behaviorTypes = ['Meltdown', 'Sensory Overload', 'Anxiety', 'Aggression', 'Self-Stimulation', 'Other'];
@@ -89,37 +93,44 @@ export default function Home() {
 
   const handleSubmit = () => {
     if (formData.entryType === 'incident' && formData.type && formData.severity) {
-      const now = new Date();
+      const formatDuration = (secs: number) => {
+        if (secs === 0) return '';
+        const mins = Math.floor(secs / 60);
+        const remainingSecs = secs % 60;
+        if (mins === 0) return `${remainingSecs}s`;
+        if (remainingSecs === 0) return `${mins}m`;
+        return `${mins}m ${remainingSecs}s`;
+      };
+
       const newEntry: Entry = {
         id: entries.length + 1,
         entryType: 'incident',
         type: formData.type,
         severity: formData.severity,
-        duration: formData.duration,
+        duration: formatDuration(formData.durationSeconds),
         trigger: formData.trigger,
         notes: formData.notes,
         consequence: formData.consequence,
         customConsequence: formData.customConsequence,
-        date: now.toISOString().split('T')[0],
-        time: now.toTimeString().slice(0, 5)
+        date: formData.timestamp.toISOString().split('T')[0],
+        time: formData.timestamp.toTimeString().slice(0, 5)
       };
       setEntries([newEntry, ...entries]);
-      setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
+      setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
       setExpansionLevel('collapsed');
     }
   };
 
   const handlePoopSubmit = (consistency: string) => {
-    const now = new Date();
     const newEntry: Entry = {
       id: entries.length + 1,
       entryType: 'poop',
       consistency,
-      date: now.toISOString().split('T')[0],
-      time: now.toTimeString().slice(0, 5)
+      date: formData.timestamp.toISOString().split('T')[0],
+      time: formData.timestamp.toTimeString().slice(0, 5)
     };
     setEntries([newEntry, ...entries]);
-    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
+    setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
     setExpansionLevel('collapsed');
   };
 
@@ -179,7 +190,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -218,12 +229,21 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
                   <X className="w-6 h-6" />
                 </button>
+              </div>
+
+              {/* Date/Time Picker */}
+              <div>
+                <label className="text-sm font-medium text-stone-100 mb-2 block">Date & Time</label>
+                <DateTimePicker
+                  date={formData.timestamp}
+                  onChange={(date) => setFormData({...formData, timestamp: date})}
+                />
               </div>
 
               {/* Behavior Type */}
@@ -306,12 +326,9 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium text-stone-100 mb-2 block">Duration</label>
-                  <input
-                    type="text"
-                    placeholder="10 min"
-                    value={formData.duration}
-                    onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                    className="w-full px-3 py-2.5 border border-emerald-600 bg-stone-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-50 text-sm"
+                  <DurationPicker
+                    value={formData.durationSeconds}
+                    onChange={(seconds) => setFormData({...formData, durationSeconds: seconds})}
                   />
                 </div>
                 <div>
@@ -361,12 +378,21 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '' });
+                    setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
                   <X className="w-6 h-6" />
                 </button>
+              </div>
+
+              {/* Date/Time Picker */}
+              <div>
+                <label className="text-sm font-medium text-stone-100 mb-2 block">Date & Time</label>
+                <DateTimePicker
+                  date={formData.timestamp}
+                  onChange={(date) => setFormData({...formData, timestamp: date})}
+                />
               </div>
 
               {/* Consistency Type */}
