@@ -14,11 +14,14 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { ChildSelect } from "./child-select";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { MultiSelect, type MultiSelectOption } from "@/components/ui/multi-select";
 
 const schema = z.object({
   childId: z.string().min(1, "Select or add a child"),
   timestamp: z.string().min(1),
-  behaviorText: z.string().min(1, "Describe the behavior"),
+  behaviorIds: z.array(z.string()).optional(),
+  behaviorText: z.string().optional(),
+  consequenceIds: z.array(z.string()).optional(),
   intensity: z.number().min(1).max(5),
   durationSec: z.string().optional(),
   latencySec: z.string().optional(),
@@ -35,7 +38,9 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
     defaultValues: {
       childId: "",
       timestamp: new Date().toISOString(),
+      behaviorIds: [],
       behaviorText: "",
+      consequenceIds: [],
       intensity: 3,
       functionHypothesis: "unknown",
       locationText: "",
@@ -44,9 +49,38 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
   });
 
   const [childId, setChildId] = useState("");
+  const [behaviors, setBehaviors] = useState<MultiSelectOption[]>([]);
+  const [consequences, setConsequences] = useState<MultiSelectOption[]>([]);
+
   useEffect(() => {
     if (childId) form.setValue("childId", childId, { shouldValidate: true });
   }, [childId, form]);
+
+  // Fetch catalog items
+  useEffect(() => {
+    async function fetchCatalogs() {
+      try {
+        const [behaviorsRes, consequencesRes] = await Promise.all([
+          fetch('/api/catalogs/behaviors'),
+          fetch('/api/catalogs/consequences'),
+        ]);
+
+        if (behaviorsRes.ok) {
+          const behaviorsData = await behaviorsRes.json();
+          setBehaviors(behaviorsData);
+        }
+
+        if (consequencesRes.ok) {
+          const consequencesData = await consequencesRes.json();
+          setConsequences(consequencesData);
+        }
+      } catch (error) {
+        console.error('Error fetching catalogs:', error);
+      }
+    }
+
+    fetchCatalogs();
+  }, []);
 
   async function onSubmit(values: FormValues) {
     try {
@@ -58,7 +92,9 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
         body: JSON.stringify({
           childId: values.childId,
           timestamp: values.timestamp,
+          behaviorIds: values.behaviorIds,
           behaviorText: values.behaviorText,
+          consequenceIds: values.consequenceIds,
           intensity: values.intensity,
           durationSec: values.durationSec ? Number(values.durationSec) : undefined,
           latencySec: values.latencySec ? Number(values.latencySec) : undefined,
@@ -76,7 +112,9 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
       toast.success("Incident saved");
       form.reset({
         ...form.getValues(),
+        behaviorIds: [],
         behaviorText: "",
+        consequenceIds: [],
         notes: "",
         timestamp: new Date().toISOString(),
       });
@@ -86,6 +124,38 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
       toast.error("Failed to save incident");
     }
   }
+
+  const handleCreateBehavior = async (label: string): Promise<MultiSelectOption> => {
+    const response = await fetch('/api/catalogs/behaviors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create behavior');
+    }
+
+    const newBehavior = await response.json();
+    setBehaviors([...behaviors, newBehavior]);
+    return newBehavior;
+  };
+
+  const handleCreateConsequence = async (label: string): Promise<MultiSelectOption> => {
+    const response = await fetch('/api/catalogs/consequences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create consequence');
+    }
+
+    const newConsequence = await response.json();
+    setConsequences([...consequences, newConsequence]);
+    return newConsequence;
+  };
 
   return (
     <Form {...form}>
@@ -150,13 +220,60 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
 
         <FormField
           control={form.control}
+          name="behaviorIds"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Behavior Types</FormLabel>
+              <FormControl>
+                <MultiSelect
+                  options={behaviors}
+                  selected={field.value || []}
+                  onChange={field.onChange}
+                  placeholder="Select behaviors..."
+                  emptyMessage="No behaviors found."
+                  catalogType="behaviors"
+                  onCreateNew={handleCreateBehavior}
+                />
+              </FormControl>
+              <FormDescription>Select predefined behavior types</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="behaviorText"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Behavior (topography)</FormLabel>
+              <FormLabel>Behavior Description (optional)</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., yelling, hitting, throwing objects" {...field} />
               </FormControl>
+              <FormDescription>Additional free-text description</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="consequenceIds"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Consequences</FormLabel>
+              <FormControl>
+                <MultiSelect
+                  options={consequences}
+                  selected={field.value || []}
+                  onChange={field.onChange}
+                  placeholder="Select consequences..."
+                  emptyMessage="No consequences found."
+                  catalogType="consequences"
+                  onCreateNew={handleCreateConsequence}
+                />
+              </FormControl>
+              <FormDescription>What happened after the behavior?</FormDescription>
               <FormMessage />
             </FormItem>
           )}
