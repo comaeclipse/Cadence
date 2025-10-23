@@ -22,7 +22,6 @@ interface MultiSelectProps {
   placeholder?: string;
   emptyMessage?: string;
   className?: string;
-  catalogType?: string; // e.g., "behaviors", "consequences"
   onCreateNew?: (label: string) => Promise<MultiSelectOption>;
 }
 
@@ -33,7 +32,6 @@ export function MultiSelect({
   placeholder = "Select items...",
   emptyMessage = "No items found.",
   className,
-  catalogType,
   onCreateNew,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);

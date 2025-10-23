@@ -231,7 +231,6 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
                   onChange={field.onChange}
                   placeholder="Select behaviors..."
                   emptyMessage="No behaviors found."
-                  catalogType="behaviors"
                   onCreateNew={handleCreateBehavior}
                 />
               </FormControl>
@@ -269,7 +268,6 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
                   onChange={field.onChange}
                   placeholder="Select consequences..."
                   emptyMessage="No consequences found."
-                  catalogType="consequences"
                   onCreateNew={handleCreateConsequence}
                 />
               </FormControl>
