@@ -144,15 +144,29 @@ export function MultiSelect({
                   return (
                     <CommandItem
                       key={option.id}
-                      onSelect={() => handleToggle(option.id)}
+                      value={option.label}
                       className="cursor-pointer"
+                      onSelect={() => {
+                        // Don't close popover on select
+                      }}
                     >
-                      <Checkbox
-                        checked={isSelected}
-                        className="mr-2"
-                        onCheckedChange={() => handleToggle(option.id)}
-                      />
-                      {option.label}
+                      <div
+                        className="flex items-center w-full"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleToggle(option.id);
+                        }}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          className="mr-2"
+                          onClick={(e) => e.stopPropagation()}
+                          onCheckedChange={() => {
+                            handleToggle(option.id);
+                          }}
+                        />
+                        {option.label}
+                      </div>
                     </CommandItem>
                   );
                 })}
