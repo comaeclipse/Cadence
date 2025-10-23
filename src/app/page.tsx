@@ -15,12 +15,12 @@ interface Entry {
   date: string;
   time: string;
   // Incident fields
-  type?: string;
+  type?: string[];
   severity?: string;
   duration?: string;
   trigger?: string;
   notes?: string;
-  consequence?: string;
+  consequence?: string[];
   customConsequence?: string;
   // Poop fields
   consistency?: string;
@@ -33,7 +33,7 @@ export default function Home() {
     {
       id: 1,
       entryType: 'incident',
-      type: 'Meltdown',
+      type: ['Meltdown'],
       severity: 'High',
       duration: '15 min',
       trigger: 'Loud noises',
@@ -44,7 +44,7 @@ export default function Home() {
     {
       id: 2,
       entryType: 'incident',
-      type: 'Sensory Overload',
+      type: ['Sensory Overload'],
       severity: 'Medium',
       duration: '8 min',
       trigger: 'Bright lights',
@@ -62,7 +62,7 @@ export default function Home() {
     {
       id: 4,
       entryType: 'incident',
-      type: 'Anxiety',
+      type: ['Anxiety'],
       severity: 'Low',
       duration: '5 min',
       trigger: 'Schedule change',
@@ -74,14 +74,14 @@ export default function Home() {
 
   const [formData, setFormData] = useState({
     entryType: '' as EntryType | '',
-    type: '',
+    type: [] as string[],
     severity: '',
     duration: '',
     durationSeconds: 0,
     trigger: '',
     notes: '',
     consistency: '',
-    consequence: '',
+    consequence: [] as string[],
     customConsequence: '',
     timestamp: new Date()
   });
@@ -92,7 +92,7 @@ export default function Home() {
   const consequenceOptions = ['Gave attention', 'Break/help', 'Preferred item', 'Redirected', 'Ignored', 'Emotion cards', 'other/custom'];
 
   const handleSubmit = () => {
-    if (formData.entryType === 'incident' && formData.type && formData.severity) {
+    if (formData.entryType === 'incident' && formData.type.length > 0 && formData.severity) {
       const formatDuration = (secs: number) => {
         if (secs === 0) return '';
         const mins = Math.floor(secs / 60);
@@ -116,7 +116,7 @@ export default function Home() {
         time: formData.timestamp.toTimeString().slice(0, 5)
       };
       setEntries([newEntry, ...entries]);
-      setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
+      setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
       setExpansionLevel('collapsed');
     }
   };
@@ -130,7 +130,7 @@ export default function Home() {
       time: formData.timestamp.toTimeString().slice(0, 5)
     };
     setEntries([newEntry, ...entries]);
-    setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
+    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
     setExpansionLevel('collapsed');
   };
 
@@ -190,7 +190,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -229,7 +229,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -254,13 +254,13 @@ export default function Home() {
                     <button
                       key={type}
                       onClick={() => {
-                        setFormData({...formData, type});
-                        setTimeout(() => {
-                          consequenceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 100);
+                        const newTypes = formData.type.includes(type)
+                          ? formData.type.filter(t => t !== type)
+                          : [...formData.type, type];
+                        setFormData({...formData, type: newTypes});
                       }}
                       className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition ${
-                        formData.type === type
+                        formData.type.includes(type)
                           ? 'border-stone-50 bg-stone-50 text-emerald-800'
                           : 'border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50'
                       }`}
@@ -278,9 +278,14 @@ export default function Home() {
                   {consequenceOptions.map((option) => (
                     <button
                       key={option}
-                      onClick={() => setFormData({...formData, consequence: option, customConsequence: option === 'other/custom' ? formData.customConsequence : ''})}
+                      onClick={() => {
+                        const newConsequences = formData.consequence.includes(option)
+                          ? formData.consequence.filter(c => c !== option)
+                          : [...formData.consequence, option];
+                        setFormData({...formData, consequence: newConsequences});
+                      }}
                       className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition ${
-                        formData.consequence === option
+                        formData.consequence.includes(option)
                           ? 'border-stone-50 bg-stone-50 text-emerald-800'
                           : 'border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50'
                       }`}
@@ -289,7 +294,7 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
-                {formData.consequence === 'other/custom' && (
+                {formData.consequence.includes('other/custom') && (
                   <div className="mt-2 animate-fadeIn">
                     <input
                       type="text"
@@ -358,9 +363,9 @@ export default function Home() {
               {/* Submit Button */}
               <button
                 onClick={handleSubmit}
-                disabled={!formData.type || !formData.severity}
+                disabled={formData.type.length === 0 || !formData.severity}
                 className={`w-full py-3 px-4 rounded-lg font-semibold transition ${
-                  formData.type && formData.severity
+                  formData.type.length > 0 && formData.severity
                     ? 'bg-stone-50 text-emerald-800 hover:bg-stone-100 active:bg-stone-200'
                     : 'bg-emerald-700/30 text-stone-300 cursor-not-allowed'
                 }`}
@@ -378,7 +383,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: '', severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: '', customConsequence: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -430,7 +435,7 @@ export default function Home() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="font-semibold text-gray-900">
-                    {entry.entryType === 'incident' ? entry.type : `Poop - ${entry.consistency}`}
+                    {entry.entryType === 'incident' ? entry.type?.join(', ') : `Poop - ${entry.consistency}`}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-gray-600 flex items-center gap-1">
@@ -457,13 +462,13 @@ export default function Home() {
 
               {entry.entryType === 'incident' && (
                 <div className="space-y-2 text-sm">
-                  {entry.consequence && (
+                  {entry.consequence && entry.consequence.length > 0 && (
                     <div className="flex items-center gap-2">
                       <span className="text-gray-600 w-20">Consequence:</span>
                       <span className="text-gray-900 font-medium">
-                        {entry.consequence === 'other/custom' && entry.customConsequence
-                          ? entry.customConsequence
-                          : entry.consequence}
+                        {entry.consequence.includes('other/custom') && entry.customConsequence
+                          ? entry.consequence.filter(c => c !== 'other/custom').concat(entry.customConsequence).join(', ')
+                          : entry.consequence.join(', ')}
                       </span>
                     </div>
                   )}
