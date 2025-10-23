@@ -13,7 +13,7 @@ export async function GET(
       where: { id },
       include: {
         child: true,
-        behavior: true,
+        behaviors: true,
         location: true,
         antecedents: true,
         consequences: true,
@@ -52,7 +52,6 @@ export async function PATCH(
       where: { id },
       data: {
         timestamp: body.timestamp ? new Date(body.timestamp) : undefined,
-        behaviorId: body.behaviorId,
         behaviorText: body.behaviorText,
         intensity: body.intensity,
         durationSec: body.durationSec,
@@ -63,10 +62,20 @@ export async function PATCH(
         notes: body.notes,
         tags: body.tags,
         settingEvents: body.settingEvents,
+        behaviors: body.behaviorIds
+          ? {
+              set: body.behaviorIds.map((id: string) => ({ id })),
+            }
+          : undefined,
+        consequences: body.consequenceIds
+          ? {
+              set: body.consequenceIds.map((id: string) => ({ id })),
+            }
+          : undefined,
       },
       include: {
         child: true,
-        behavior: true,
+        behaviors: true,
         location: true,
         antecedents: true,
         consequences: true,
