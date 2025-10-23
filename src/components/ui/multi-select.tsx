@@ -147,14 +147,14 @@ export function MultiSelect({
                       value={option.label}
                       className="cursor-pointer"
                       onSelect={() => {
-                        // Don't close popover on select
+                        handleToggle(option.id);
                       }}
                     >
                       <div
                         className="flex items-center w-full"
                         onClick={(e) => {
                           e.preventDefault();
-                          handleToggle(option.id);
+                          e.stopPropagation();
                         }}
                       >
                         <Checkbox
