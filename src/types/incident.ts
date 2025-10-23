@@ -22,7 +22,7 @@ export interface Incident {
   id: string;
   childId: string;
   timestamp: string; // ISO string
-  behaviorId?: string;
+  behaviorIds?: string[];
   behaviorText?: string;
   intensity: 1 | 2 | 3 | 4 | 5;
   durationSec?: number;

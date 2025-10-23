@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       where: childId ? { childId } : undefined,
       include: {
         child: true,
-        behavior: true,
+        behaviors: true,
         location: true,
         antecedents: true,
         consequences: true,
@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
       data: {
         childId: body.childId,
         timestamp: new Date(body.timestamp),
-        behaviorId: body.behaviorId,
         behaviorText: body.behaviorText,
         intensity: body.intensity,
         durationSec: body.durationSec,
@@ -53,6 +52,11 @@ export async function POST(request: NextRequest) {
         notes: body.notes,
         tags: body.tags || [],
         settingEvents: body.settingEvents,
+        behaviors: body.behaviorIds
+          ? {
+              connect: body.behaviorIds.map((id: string) => ({ id })),
+            }
+          : undefined,
         antecedents: body.antecedentIds
           ? {
               connect: body.antecedentIds.map((id: string) => ({ id })),
@@ -71,7 +75,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         child: true,
-        behavior: true,
+        behaviors: true,
         location: true,
         antecedents: true,
         consequences: true,
