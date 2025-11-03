@@ -212,16 +212,24 @@ export default function Home() {
 
         // Save to database
         console.log('Saving incident to database...');
-        const incidentData = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const incidentData: any = {
           childId,
           timestamp: formData.timestamp.toISOString(),
           behaviorText: formData.type.join(', '),
           intensity: severityToIntensity(formData.severity),
-          durationSec: formData.durationSeconds || undefined,
           functionHypothesis: 'unknown',
-          notes: fullNotes,
           tags: [],
         };
+
+        // Only add optional fields if they have values
+        if (formData.durationSeconds && formData.durationSeconds > 0) {
+          incidentData.durationSec = formData.durationSeconds;
+        }
+        if (fullNotes) {
+          incidentData.notes = fullNotes;
+        }
+
         console.log('Incident data:', incidentData);
 
         const response = await fetch('/api/incidents', {

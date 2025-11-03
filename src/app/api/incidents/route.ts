@@ -37,42 +37,53 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('Creating incident with data:', JSON.stringify(body, null, 2));
+
+    // Build data object without undefined values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {
+      childId: body.childId,
+      timestamp: new Date(body.timestamp),
+      intensity: body.intensity,
+      functionHypothesis: body.functionHypothesis,
+      tags: body.tags || [],
+    };
+
+    // Only add optional fields if they have values
+    if (body.behaviorText) data.behaviorText = body.behaviorText;
+    if (body.durationSec !== undefined && body.durationSec !== null) data.durationSec = body.durationSec;
+    if (body.latencySec !== undefined && body.latencySec !== null) data.latencySec = body.latencySec;
+    if (body.locationId) data.locationId = body.locationId;
+    if (body.locationText) data.locationText = body.locationText;
+    if (body.notes) data.notes = body.notes;
+    if (body.settingEvents) data.settingEvents = body.settingEvents;
+
+    // Handle relations
+    if (body.behaviorIds && body.behaviorIds.length > 0) {
+      data.behaviors = {
+        connect: body.behaviorIds.map((id: string) => ({ id })),
+      };
+    }
+    if (body.antecedentIds && body.antecedentIds.length > 0) {
+      data.antecedents = {
+        connect: body.antecedentIds.map((id: string) => ({ id })),
+      };
+    }
+    if (body.consequenceIds && body.consequenceIds.length > 0) {
+      data.consequences = {
+        connect: body.consequenceIds.map((id: string) => ({ id })),
+      };
+    }
+    if (body.interventionIds && body.interventionIds.length > 0) {
+      data.interventions = {
+        connect: body.interventionIds.map((id: string) => ({ id })),
+      };
+    }
+
+    console.log('Prisma create data:', JSON.stringify(data, null, 2));
 
     const incident = await prisma.incident.create({
-      data: {
-        childId: body.childId,
-        timestamp: new Date(body.timestamp),
-        behaviorText: body.behaviorText,
-        intensity: body.intensity,
-        durationSec: body.durationSec,
-        latencySec: body.latencySec,
-        locationId: body.locationId,
-        locationText: body.locationText,
-        functionHypothesis: body.functionHypothesis,
-        notes: body.notes,
-        tags: body.tags || [],
-        settingEvents: body.settingEvents,
-        behaviors: body.behaviorIds
-          ? {
-              connect: body.behaviorIds.map((id: string) => ({ id })),
-            }
-          : undefined,
-        antecedents: body.antecedentIds
-          ? {
-              connect: body.antecedentIds.map((id: string) => ({ id })),
-            }
-          : undefined,
-        consequences: body.consequenceIds
-          ? {
-              connect: body.consequenceIds.map((id: string) => ({ id })),
-            }
-          : undefined,
-        interventions: body.interventionIds
-          ? {
-              connect: body.interventionIds.map((id: string) => ({ id })),
-            }
-          : undefined,
-      },
+      data,
       include: {
         child: true,
         behaviors: true,
@@ -84,11 +95,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('Incident created successfully:', incident.id);
     return NextResponse.json(incident, { status: 201 });
   } catch (error) {
     console.error('Error creating incident:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return NextResponse.json(
-      { error: 'Failed to create incident' },
+      {
+        error: 'Failed to create incident',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
