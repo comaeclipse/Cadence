@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Calendar, Clock, X } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -29,48 +29,8 @@ interface Entry {
 export default function Home() {
   const consequenceRef = useRef<HTMLDivElement>(null);
   const [expansionLevel, setExpansionLevel] = useState<ExpansionLevel>('collapsed');
-  const [entries, setEntries] = useState<Entry[]>([
-    {
-      id: 1,
-      entryType: 'incident',
-      type: ['Meltdown'],
-      severity: 'High',
-      duration: '15 min',
-      trigger: 'Loud noises',
-      date: '2025-10-15',
-      time: '14:30',
-      notes: 'Fire alarm went off during lunch'
-    },
-    {
-      id: 2,
-      entryType: 'incident',
-      type: ['Sensory Overload'],
-      severity: 'Medium',
-      duration: '8 min',
-      trigger: 'Bright lights',
-      date: '2025-10-14',
-      time: '10:15',
-      notes: 'Shopping mall fluorescent lighting'
-    },
-    {
-      id: 3,
-      entryType: 'poop',
-      consistency: 'Normal',
-      date: '2025-10-14',
-      time: '09:30'
-    },
-    {
-      id: 4,
-      entryType: 'incident',
-      type: ['Anxiety'],
-      severity: 'Low',
-      duration: '5 min',
-      trigger: 'Schedule change',
-      date: '2025-10-13',
-      time: '16:45',
-      notes: 'Unexpected visitor'
-    }
-  ]);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     entryType: '' as EntryType | '',
@@ -91,8 +51,69 @@ export default function Home() {
   const consistencyTypes = ['Soft', 'Normal', 'Hard', 'Formed', 'Loose', 'Watery'];
   const consequenceOptions = ['Gave attention', 'Break/help', 'Preferred item', 'Redirected', 'Ignored', 'Emotion cards', 'other/custom'];
 
-  const handleSubmit = () => {
+  // Load incidents from API on mount
+  useEffect(() => {
+    async function loadIncidents() {
+      try {
+        const response = await fetch('/api/incidents');
+        if (response.ok) {
+          const incidents = await response.json();
+
+          // Convert API incidents to Entry format
+          const convertedEntries: Entry[] = incidents.map((incident: {
+            timestamp: string;
+            behaviorText: string | null;
+            intensity: number;
+            durationSec: number | null;
+            notes: string | null;
+          }, index: number) => {
+            const timestamp = new Date(incident.timestamp);
+            const intensityToSeverity = (intensity: number): string => {
+              if (intensity <= 2) return 'Low';
+              if (intensity <= 3) return 'Medium';
+              return 'High';
+            };
+
+            const formatDuration = (secs: number | null | undefined) => {
+              if (!secs || secs === 0) return '';
+              const mins = Math.floor(secs / 60);
+              const remainingSecs = secs % 60;
+              if (mins === 0) return `${remainingSecs}s`;
+              if (remainingSecs === 0) return `${mins}m`;
+              return `${mins}m ${remainingSecs}s`;
+            };
+
+            return {
+              id: index + 1,
+              entryType: 'incident',
+              type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
+              severity: intensityToSeverity(incident.intensity),
+              duration: formatDuration(incident.durationSec),
+              trigger: '', // Extract from notes if needed
+              notes: incident.notes || '',
+              consequence: [],
+              customConsequence: '',
+              date: timestamp.toISOString().split('T')[0],
+              time: timestamp.toTimeString().slice(0, 5)
+            };
+          });
+
+          setEntries(convertedEntries);
+        }
+      } catch (error) {
+        console.error('Error loading incidents:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadIncidents();
+  }, []);
+
+  const handleSubmit = async () => {
     if (formData.entryType === 'incident' && formData.type.length > 0 && formData.severity) {
+      console.log('Starting incident save...');
+
       const formatDuration = (secs: number) => {
         if (secs === 0) return '';
         const mins = Math.floor(secs / 60);
@@ -102,6 +123,17 @@ export default function Home() {
         return `${mins}m ${remainingSecs}s`;
       };
 
+      // Convert severity to intensity (1-5)
+      const severityToIntensity = (severity: string): number => {
+        switch (severity) {
+          case 'Low': return 2;
+          case 'Medium': return 3;
+          case 'High': return 5;
+          default: return 3;
+        }
+      };
+
+      // Create optimistic UI entry
       const newEntry: Entry = {
         id: entries.length + 1,
         entryType: 'incident',
@@ -115,9 +147,157 @@ export default function Home() {
         date: formData.timestamp.toISOString().split('T')[0],
         time: formData.timestamp.toTimeString().slice(0, 5)
       };
+
+      // Store old entries for rollback if needed
+      const oldEntries = entries;
+
+      // Add to UI immediately for responsiveness
       setEntries([newEntry, ...entries]);
-      setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
-      setExpansionLevel('collapsed');
+
+      try {
+        // Get or create default child
+        console.log('Fetching children...');
+        const childResponse = await fetch('/api/children');
+        let childId = '';
+
+        if (!childResponse.ok) {
+          const errorText = await childResponse.text();
+          console.error('Failed to fetch children:', childResponse.status, errorText);
+          throw new Error(`Failed to fetch children: ${childResponse.status}`);
+        }
+
+        const children = await childResponse.json();
+        console.log('Children found:', children.length);
+
+        if (children.length > 0) {
+          childId = children[0].id;
+          console.log('Using existing child:', childId);
+        } else {
+          // Create default child if none exists
+          console.log('Creating default child...');
+          const createChildResponse = await fetch('/api/children', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'Default Child' }),
+          });
+
+          if (!createChildResponse.ok) {
+            const errorText = await createChildResponse.text();
+            console.error('Failed to create child:', createChildResponse.status, errorText);
+            throw new Error(`Failed to create child: ${createChildResponse.status}`);
+          }
+
+          const newChild = await createChildResponse.json();
+          childId = newChild.id;
+          console.log('Created new child:', childId);
+        }
+
+        if (!childId) {
+          throw new Error('Failed to get or create child - no ID returned');
+        }
+
+        // Build notes with trigger if provided
+        let fullNotes = formData.notes || '';
+        if (formData.trigger) {
+          fullNotes = `Trigger: ${formData.trigger}${fullNotes ? '\n' + fullNotes : ''}`;
+        }
+
+        // Build consequence text for notes
+        if (formData.consequence.length > 0) {
+          const consequenceText = formData.consequence.includes('other/custom') && formData.customConsequence
+            ? formData.consequence.filter(c => c !== 'other/custom').concat(formData.customConsequence).join(', ')
+            : formData.consequence.join(', ');
+          fullNotes = fullNotes ? `${fullNotes}\nConsequence: ${consequenceText}` : `Consequence: ${consequenceText}`;
+        }
+
+        // Save to database
+        console.log('Saving incident to database...');
+        const incidentData = {
+          childId,
+          timestamp: formData.timestamp.toISOString(),
+          behaviorText: formData.type.join(', '),
+          intensity: severityToIntensity(formData.severity),
+          durationSec: formData.durationSeconds || undefined,
+          functionHypothesis: 'unknown',
+          notes: fullNotes,
+          tags: [],
+        };
+        console.log('Incident data:', incidentData);
+
+        const response = await fetch('/api/incidents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(incidentData),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Failed to save incident:', response.status, errorText);
+          throw new Error(`Failed to save incident: ${response.status} - ${errorText}`);
+        }
+
+        const savedIncident = await response.json();
+        console.log('Incident saved successfully:', savedIncident.id);
+
+        // Reload incidents from database to stay in sync
+        console.log('Reloading incidents from database...');
+        const reloadResponse = await fetch('/api/incidents');
+        if (reloadResponse.ok) {
+          const incidents = await reloadResponse.json();
+          console.log('Loaded incidents:', incidents.length);
+          const convertedEntries: Entry[] = incidents.map((incident: {
+            timestamp: string;
+            behaviorText: string | null;
+            intensity: number;
+            durationSec: number | null;
+            notes: string | null;
+          }, index: number) => {
+            const timestamp = new Date(incident.timestamp);
+            const intensityToSeverity = (intensity: number): string => {
+              if (intensity <= 2) return 'Low';
+              if (intensity <= 3) return 'Medium';
+              return 'High';
+            };
+
+            const formatDuration = (secs: number | null | undefined) => {
+              if (!secs || secs === 0) return '';
+              const mins = Math.floor(secs / 60);
+              const remainingSecs = secs % 60;
+              if (mins === 0) return `${remainingSecs}s`;
+              if (remainingSecs === 0) return `${mins}m`;
+              return `${mins}m ${remainingSecs}s`;
+            };
+
+            return {
+              id: index + 1,
+              entryType: 'incident',
+              type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
+              severity: intensityToSeverity(incident.intensity),
+              duration: formatDuration(incident.durationSec),
+              trigger: '',
+              notes: incident.notes || '',
+              consequence: [],
+              customConsequence: '',
+              date: timestamp.toISOString().split('T')[0],
+              time: timestamp.toTimeString().slice(0, 5)
+            };
+          });
+          setEntries(convertedEntries);
+        } else {
+          console.error('Failed to reload incidents:', reloadResponse.status);
+        }
+
+        // Reset form on success
+        setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
+        setExpansionLevel('collapsed');
+        console.log('Incident save complete!');
+      } catch (error) {
+        console.error('Error saving incident:', error);
+        // Revert to old entries on error
+        setEntries(oldEntries);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        alert(`Failed to save incident: ${errorMessage}\n\nPlease check the browser console for details.`);
+      }
     }
   };
 
@@ -426,7 +606,13 @@ export default function Home() {
             <button className="text-sm text-emerald-700 font-medium">View All</button>
           </div>
 
-          {entries.map((entry) => (
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-600">Loading incidents...</div>
+          ) : entries.length === 0 ? (
+            <div className="text-center py-8 text-gray-600">No incidents yet. Add your first one above!</div>
+          ) : null}
+
+          {!isLoading && entries.map((entry) => (
             <div key={entry.id} className={`rounded-xl p-4 shadow-sm border ${
               entry.entryType === 'incident'
                 ? 'bg-stone-50 border-stone-200'
