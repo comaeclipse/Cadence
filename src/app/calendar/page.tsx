@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
-import { db } from "@/lib/db";
 import type { Incident } from "@/types/incident";
 
 export default function CalendarPage() {
@@ -17,13 +16,34 @@ export default function CalendarPage() {
   }, [currentDate]);
 
   async function loadIncidents() {
-    const allIncidents = await db.incidents.toArray();
-    setIncidents(allIncidents);
+    try {
+      const response = await fetch('/api/incidents');
+      if (response.ok) {
+        const allIncidents = await response.json();
+        setIncidents(allIncidents);
+      }
+    } catch (error) {
+      console.error('Error loading incidents:', error);
+    }
   }
+
+  // Helper to format date as YYYY-MM-DD without timezone issues
+  const formatDateKey = (year: number, month: number, day: number): string => {
+    const yyyy = year;
+    const mm = String(month + 1).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Helper to get date string from timestamp without timezone shift
+  const getDateKey = (timestamp: string): string => {
+    const date = new Date(timestamp);
+    return formatDateKey(date.getFullYear(), date.getMonth(), date.getDate());
+  };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  
+
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
   const daysInMonth = lastDayOfMonth.getDate();
@@ -43,18 +63,17 @@ export default function CalendarPage() {
 
   const getIncidentsForDate = (dateStr: string) => {
     return incidents.filter(i => {
-      const incidentDate = new Date(i.timestamp);
-      return incidentDate.toDateString() === new Date(dateStr).toDateString();
+      return getDateKey(i.timestamp) === dateStr;
     });
   };
 
   const hasIncidents = (day: number) => {
-    const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+    const dateStr = formatDateKey(year, month, day);
     return getIncidentsForDate(dateStr).length > 0;
   };
 
   const handleDayClick = (day: number) => {
-    const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+    const dateStr = formatDateKey(year, month, day);
     if (expandedDay === dateStr) {
       setExpandedDay(null);
     } else {
@@ -111,10 +130,11 @@ export default function CalendarPage() {
           <div className="grid grid-cols-7 gap-1">
             {days.map((day, index) => {
               if (typeof day !== 'number') return day;
-              
-              const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+
+              const dateStr = formatDateKey(year, month, day);
               const hasEvents = hasIncidents(day);
-              const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+              const today = new Date();
+              const isToday = formatDateKey(today.getFullYear(), today.getMonth(), today.getDate()) === dateStr;
               const isExpanded = expandedDay === dateStr;
 
               return (
@@ -144,11 +164,16 @@ export default function CalendarPage() {
           <div className="bg-stone-50 rounded-xl p-4 shadow-sm border border-stone-200 space-y-3 animate-fadeIn">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900">
-                {new Date(expandedDay).toLocaleDateString('default', { 
-                  weekday: 'long', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
+                {(() => {
+                  // Parse YYYY-MM-DD without timezone issues
+                  const [y, m, d] = expandedDay.split('-').map(Number);
+                  const date = new Date(y, m - 1, d);
+                  return date.toLocaleDateString('default', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  });
+                })()}
               </h3>
               <button 
                 onClick={() => setExpandedDay(null)}
