@@ -1,16 +1,25 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Calendar, Clock, X } from 'lucide-react';
+import { Plus, Calendar, Clock, X, Trash2 } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { DurationPicker } from '@/components/ui/duration-picker';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 type ExpansionLevel = 'collapsed' | 'category' | 'incident' | 'poop';
 type EntryType = 'incident' | 'poop';
 
 interface Entry {
-  id: number;
+  id: string;
   entryType: EntryType;
   date: string;
   time: string;
@@ -31,6 +40,8 @@ export default function Home() {
   const [expansionLevel, setExpansionLevel] = useState<ExpansionLevel>('collapsed');
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     entryType: '' as EntryType | '',
@@ -61,12 +72,13 @@ export default function Home() {
 
           // Convert API incidents to Entry format
           const convertedEntries: Entry[] = incidents.map((incident: {
+            id: string;
             timestamp: string;
             behaviorText: string | null;
             intensity: number;
             durationSec: number | null;
             notes: string | null;
-          }, index: number) => {
+          }) => {
             const timestamp = new Date(incident.timestamp);
             const intensityToSeverity = (intensity: number): string => {
               if (intensity <= 2) return 'Low';
@@ -84,7 +96,7 @@ export default function Home() {
             };
 
             return {
-              id: index + 1,
+              id: incident.id,
               entryType: 'incident',
               type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
               severity: intensityToSeverity(incident.intensity),
@@ -135,7 +147,7 @@ export default function Home() {
 
       // Create optimistic UI entry
       const newEntry: Entry = {
-        id: entries.length + 1,
+        id: `temp-${Date.now()}`,
         entryType: 'incident',
         type: formData.type,
         severity: formData.severity,
@@ -254,12 +266,13 @@ export default function Home() {
           const incidents = await reloadResponse.json();
           console.log('Loaded incidents:', incidents.length);
           const convertedEntries: Entry[] = incidents.map((incident: {
+            id: string;
             timestamp: string;
             behaviorText: string | null;
             intensity: number;
             durationSec: number | null;
             notes: string | null;
-          }, index: number) => {
+          }) => {
             const timestamp = new Date(incident.timestamp);
             const intensityToSeverity = (intensity: number): string => {
               if (intensity <= 2) return 'Low';
@@ -277,7 +290,7 @@ export default function Home() {
             };
 
             return {
-              id: index + 1,
+              id: incident.id,
               entryType: 'incident',
               type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
               severity: intensityToSeverity(incident.intensity),
@@ -311,7 +324,7 @@ export default function Home() {
 
   const handlePoopSubmit = (consistency: string) => {
     const newEntry: Entry = {
-      id: entries.length + 1,
+      id: `poop-${Date.now()}`,
       entryType: 'poop',
       consistency,
       date: formData.timestamp.toISOString().split('T')[0],
@@ -320,6 +333,78 @@ export default function Home() {
     setEntries([newEntry, ...entries]);
     setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
     setExpansionLevel('collapsed');
+  };
+
+  const handleDeleteClick = (entryId: string) => {
+    setEntryToDelete(entryId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!entryToDelete) return;
+
+    try {
+      const response = await fetch(`/api/incidents/${entryToDelete}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete incident');
+      }
+
+      toast.success('Incident deleted successfully');
+
+      // Reload incidents from database
+      const reloadResponse = await fetch('/api/incidents');
+      if (reloadResponse.ok) {
+        const incidents = await reloadResponse.json();
+        const convertedEntries: Entry[] = incidents.map((incident: {
+          id: string;
+          timestamp: string;
+          behaviorText: string | null;
+          intensity: number;
+          durationSec: number | null;
+          notes: string | null;
+        }) => {
+          const timestamp = new Date(incident.timestamp);
+          const intensityToSeverity = (intensity: number): string => {
+            if (intensity <= 2) return 'Low';
+            if (intensity <= 3) return 'Medium';
+            return 'High';
+          };
+
+          const formatDuration = (secs: number | null | undefined) => {
+            if (!secs || secs === 0) return '';
+            const mins = Math.floor(secs / 60);
+            const remainingSecs = secs % 60;
+            if (mins === 0) return `${remainingSecs}s`;
+            if (remainingSecs === 0) return `${mins}m`;
+            return `${mins}m ${remainingSecs}s`;
+          };
+
+          return {
+            id: incident.id,
+            entryType: 'incident',
+            type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
+            severity: intensityToSeverity(incident.intensity),
+            duration: formatDuration(incident.durationSec),
+            trigger: '',
+            notes: incident.notes || '',
+            consequence: [],
+            customConsequence: '',
+            date: timestamp.toISOString().split('T')[0],
+            time: timestamp.toTimeString().slice(0, 5)
+          };
+        });
+        setEntries(convertedEntries);
+      }
+    } catch (error) {
+      console.error('Error deleting incident:', error);
+      toast.error('Failed to delete incident');
+    } finally {
+      setDeleteDialogOpen(false);
+      setEntryToDelete(null);
+    }
   };
 
   const getSeverityColor = (severity: string) => {
@@ -679,8 +764,17 @@ export default function Home() {
                     </div>
                   )}
                   {entry.notes && (
-                    <div className="pt-2 border-t border-stone-200">
-                      <p className="text-gray-700 text-xs">{entry.notes}</p>
+                    <div className="pt-2 border-t border-stone-200 flex items-start justify-between gap-2">
+                      <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
+                      {entry.entryType === 'incident' && (
+                        <button
+                          onClick={() => handleDeleteClick(entry.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 transition flex-shrink-0"
+                          aria-label="Delete incident"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -689,6 +783,32 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Incident</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this incident? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              onClick={() => setDeleteDialogOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteConfirm}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition"
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 }
