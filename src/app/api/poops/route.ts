@@ -1,0 +1,72 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+// GET /api/poops - List all poop entries
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const childId = searchParams.get('childId');
+
+    const poops = await prisma.poop.findMany({
+      where: childId ? { childId } : undefined,
+      include: {
+        child: true,
+      },
+      orderBy: {
+        timestamp: 'desc',
+      },
+    });
+
+    return NextResponse.json(poops);
+  } catch (error) {
+    console.error('Error fetching poops:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch poops' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/poops - Create a new poop entry
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    console.log('Creating poop entry with data:', JSON.stringify(body, null, 2));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {
+      childId: body.childId,
+      timestamp: new Date(body.timestamp),
+      consistency: body.consistency,
+    };
+
+    // Only add optional fields if they have values
+    if (body.notes) data.notes = body.notes;
+
+    console.log('Prisma create data:', JSON.stringify(data, null, 2));
+
+    const poop = await prisma.poop.create({
+      data,
+      include: {
+        child: true,
+      },
+    });
+
+    console.log('Poop entry created successfully:', poop.id);
+    return NextResponse.json(poop, { status: 201 });
+  } catch (error) {
+    console.error('Error creating poop entry:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    return NextResponse.json(
+      {
+        error: 'Failed to create poop entry',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
