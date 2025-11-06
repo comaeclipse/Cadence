@@ -37,18 +37,6 @@ export function MobileLayout({ children, title = "Behavior Tracker", subtitle = 
 
   return (
     <div {...handlers} className="min-h-screen bg-stone-100 pb-20">
-      {/* iOS Status Bar */}
-      <div className="bg-stone-50 pt-3 pb-2 px-6">
-        <div className="flex justify-between items-center text-sm">
-          <span className="font-semibold">9:41</span>
-          <div className="flex gap-1 items-center">
-            <div className="w-4 h-3 border border-black rounded-sm relative">
-              <div className="absolute inset-0.5 bg-black rounded-sm"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Header */}
       <div className="bg-stone-50 border-b border-stone-200 px-6 py-4">
         <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
