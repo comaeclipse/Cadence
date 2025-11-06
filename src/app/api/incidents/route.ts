@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
     const data: any = {
       childId: body.childId,
       timestamp: new Date(body.timestamp),
-      intensity: body.intensity,
       functionHypothesis: body.functionHypothesis,
       tags: body.tags || [],
     };

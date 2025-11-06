@@ -7,7 +7,6 @@ interface IncidentWithRelations {
   child: { name: string };
   behaviors: Array<{ label: string }>;
   behaviorText?: string;
-  intensity: number;
   durationSec?: number;
   latencySec?: number;
   location?: { label: string };
@@ -160,7 +159,6 @@ const DetailedIncidentReport = React.forwardRef<HTMLDivElement, DetailedIncident
               <th style={{ width: '12%' }}>Date/Time</th>
               <th style={{ width: '8%' }}>Child</th>
               <th style={{ width: '12%' }}>Behavior</th>
-              <th style={{ width: '6%' }}>Intensity</th>
               <th style={{ width: '7%' }}>Duration</th>
               <th style={{ width: '12%' }}>Antecedents</th>
               <th style={{ width: '12%' }}>Consequences</th>
@@ -180,7 +178,6 @@ const DetailedIncidentReport = React.forwardRef<HTMLDivElement, DetailedIncident
                     incident.behaviorText ||
                     'N/A'}
                 </td>
-                <td>{incident.intensity}</td>
                 <td>{formatDuration(incident.durationSec)}</td>
                 <td>{incident.antecedents.map((a) => a.label).join(', ') || 'N/A'}</td>
                 <td>{incident.consequences.map((c) => c.label).join(', ') || 'N/A'}</td>

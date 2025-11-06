@@ -25,7 +25,6 @@ interface Entry {
   time: string;
   // Incident fields
   type?: string[];
-  severity?: string;
   duration?: string;
   trigger?: string;
   notes?: string;
@@ -78,12 +77,6 @@ export default function Home() {
 
   // Helper function to convert API response to entries
   const convertApiResponseToEntries = (incidents: ApiIncident[], poops: ApiPoop[], foods: ApiFood[]): Entry[] => {
-    const intensityToSeverity = (intensity: number): string => {
-      if (intensity <= 2) return 'Low';
-      if (intensity <= 3) return 'Medium';
-      return 'High';
-    };
-
     const formatDuration = (secs: number | null | undefined) => {
       if (!secs || secs === 0) return '';
       const mins = Math.floor(secs / 60);
@@ -97,7 +90,6 @@ export default function Home() {
       id: incident.id,
       entryType: 'incident',
       type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
-      severity: intensityToSeverity(incident.intensity),
       duration: formatDuration(incident.durationSec),
       trigger: '',
       notes: incident.notes || '',
@@ -147,7 +139,6 @@ export default function Home() {
   const [formData, setFormData] = useState({
     entryType: '' as EntryType | '',
     type: [] as string[],
-    severity: '',
     duration: '',
     durationSeconds: 0,
     trigger: '',
@@ -161,7 +152,6 @@ export default function Home() {
   });
 
   const behaviorTypes = ['Meltdown', 'Sensory Overload', 'Anxiety', 'Aggression', 'Self-Stimulation', 'Other'];
-  const severityLevels = ['Low', 'Medium', 'High'];
   const consistencyTypes = ['Soft', 'Normal', 'Hard', 'Formed', 'Loose', 'Watery'];
   const consequenceOptions = ['Gave attention', 'Break/help', 'Preferred item', 'Redirected', 'Ignored', 'Emotion cards', 'other/custom'];
 
@@ -189,7 +179,7 @@ export default function Home() {
   }, []);
 
   const handleSubmit = async () => {
-    if (formData.entryType === 'incident' && formData.type.length > 0 && formData.severity) {
+    if (formData.entryType === 'incident' && formData.type.length > 0) {
       console.log('Starting incident save...');
 
       const formatDuration = (secs: number) => {
@@ -201,22 +191,11 @@ export default function Home() {
         return `${mins}m ${remainingSecs}s`;
       };
 
-      // Convert severity to intensity (1-5)
-      const severityToIntensity = (severity: string): number => {
-        switch (severity) {
-          case 'Low': return 2;
-          case 'Medium': return 3;
-          case 'High': return 5;
-          default: return 3;
-        }
-      };
-
       // Create optimistic UI entry
       const newEntry: Entry = {
         id: `temp-${Date.now()}`,
         entryType: 'incident',
         type: formData.type,
-        severity: formData.severity,
         duration: formatDuration(formData.durationSeconds),
         trigger: formData.trigger,
         notes: formData.notes,
@@ -295,7 +274,6 @@ export default function Home() {
           childId,
           timestamp: formData.timestamp.toISOString(),
           behaviorText: formData.type.join(', '),
-          intensity: severityToIntensity(formData.severity),
           functionHypothesis: 'unknown',
           tags: [],
         };
@@ -339,7 +317,7 @@ export default function Home() {
         }
 
         // Reset form on success
-        setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+        setFormData({ entryType: '', type: [], duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
         setExpansionLevel('collapsed');
         console.log('Incident save complete!');
       } catch (error) {
@@ -455,7 +433,7 @@ export default function Home() {
       }
 
       // Reset form on success
-      setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+      setFormData({ entryType: '', type: [], duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
       setExpansionLevel('collapsed');
       toast.success('Poop logged successfully');
       console.log('Poop save complete!');
@@ -579,7 +557,7 @@ export default function Home() {
       }
 
       // Reset form on success
-      setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+      setFormData({ entryType: '', type: [], duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
       setExpansionLevel('collapsed');
       toast.success('Food logged successfully');
       console.log('Food save complete!');
@@ -660,15 +638,6 @@ export default function Home() {
     }
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch(severity) {
-      case 'Low': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'High': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <MobileLayout>
       <div className="p-4 space-y-4">
@@ -716,7 +685,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -768,7 +737,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -846,26 +815,6 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Severity */}
-              <div>
-                <label className="text-sm font-medium text-stone-100 mb-2 block">Severity *</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {severityLevels.map((level) => (
-                    <button
-                      key={level}
-                      onClick={() => setFormData({...formData, severity: level})}
-                      className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition ${
-                        formData.severity === level
-                          ? 'border-stone-50 bg-stone-50 text-emerald-800'
-                          : 'border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50'
-                      }`}
-                    >
-                      {level}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Duration & Trigger in Grid */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -902,9 +851,9 @@ export default function Home() {
               {/* Submit Button */}
               <button
                 onClick={handleSubmit}
-                disabled={formData.type.length === 0 || !formData.severity}
+                disabled={formData.type.length === 0}
                 className={`w-full py-3 px-4 rounded-lg font-semibold transition ${
-                  formData.type.length > 0 && formData.severity
+                  formData.type.length > 0
                     ? 'bg-stone-50 text-emerald-800 hover:bg-stone-100 active:bg-stone-200'
                     : 'bg-emerald-700/30 text-stone-300 cursor-not-allowed'
                 }`}
@@ -922,7 +871,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -965,7 +914,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -1078,11 +1027,6 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-                {entry.entryType === 'incident' && entry.severity && (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(entry.severity)}`}>
-                    {entry.severity}
-                  </span>
-                )}
                 {entry.entryType === 'poop' && (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                     Poop
@@ -1249,19 +1193,6 @@ export default function Home() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
-                    <select
-                      value={entryToEdit.severity || ''}
-                      onChange={(e) => setEntryToEdit({ ...entryToEdit, severity: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select severity</option>
-                      {severityLevels.map(level => (
-                        <option key={level} value={level}>{level}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
                     <input
                       type="text"
@@ -1355,7 +1286,6 @@ export default function Home() {
                     endpoint = `/api/incidents/${entryToEdit.id}`;
                     body = {
                       type: entryToEdit.type,
-                      severity: entryToEdit.severity,
                       duration: entryToEdit.duration,
                       trigger: entryToEdit.trigger,
                       notes: entryToEdit.notes,

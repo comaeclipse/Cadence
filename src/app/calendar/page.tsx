@@ -82,18 +82,6 @@ export default function CalendarPage() {
     }
   };
 
-  const getSeverityColor = (intensity: number) => {
-    if (intensity >= 4) return 'bg-red-100 text-red-800';
-    if (intensity >= 3) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-green-100 text-green-800';
-  };
-
-  const getSeverityLabel = (intensity: number) => {
-    if (intensity >= 4) return 'High';
-    if (intensity >= 3) return 'Medium';
-    return 'Low';
-  };
-
   const days = [];
   for (let i = 0; i < startingDayOfWeek; i++) {
     days.push(<div key={`empty-${i}`} className="aspect-square" />);
@@ -199,9 +187,6 @@ export default function CalendarPage() {
                         })}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(incident.intensity)}`}>
-                      {getSeverityLabel(incident.intensity)}
-                    </span>
                   </div>
                   
                   <div className="space-y-1 text-sm mt-2">

@@ -30,7 +30,6 @@ model Incident {
   timestamp          DateTime
   behaviors          Behavior[]   @relation("IncidentBehaviors")
   behaviorText       String?
-  intensity          Int // 1-5
   durationSec        Int?
   latencySec         Int?
   locationId         String?
