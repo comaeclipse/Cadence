@@ -38,8 +38,104 @@ interface Entry {
   amountConsumed?: string;
 }
 
+interface ApiIncident {
+  id: string;
+  childId: string;
+  timestamp: string | Date;
+  type?: string[];
+  intensity: number;
+  duration?: number | null;
+  trigger?: string;
+  notes?: string;
+  consequence?: string[];
+  customConsequence?: string;
+  behaviorText?: string;
+  durationSec?: number | null;
+  [key: string]: unknown;
+}
+
+interface ApiPoop {
+  id: string;
+  childId: string;
+  timestamp: string | Date;
+  consistency: string;
+  notes?: string;
+  [key: string]: unknown;
+}
+
+interface ApiFood {
+  id: string;
+  childId: string;
+  timestamp: string | Date;
+  foodItem: string;
+  amountConsumed: string;
+  notes?: string;
+  [key: string]: unknown;
+}
+
 export default function Home() {
   const consequenceRef = useRef<HTMLDivElement>(null);
+
+  // Helper function to convert API response to entries
+  const convertApiResponseToEntries = (incidents: ApiIncident[], poops: ApiPoop[], foods: ApiFood[]): Entry[] => {
+    const intensityToSeverity = (intensity: number): string => {
+      if (intensity <= 2) return 'Low';
+      if (intensity <= 3) return 'Medium';
+      return 'High';
+    };
+
+    const formatDuration = (secs: number | null | undefined) => {
+      if (!secs || secs === 0) return '';
+      const mins = Math.floor(secs / 60);
+      const remainingSecs = secs % 60;
+      if (mins === 0) return `${remainingSecs}s`;
+      if (remainingSecs === 0) return `${mins}m`;
+      return `${mins}m ${remainingSecs}s`;
+    };
+
+    const convertedIncidents: Entry[] = incidents.map((incident) => ({
+      id: incident.id,
+      entryType: 'incident',
+      type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
+      severity: intensityToSeverity(incident.intensity),
+      duration: formatDuration(incident.durationSec),
+      trigger: '',
+      notes: incident.notes || '',
+      consequence: [],
+      customConsequence: '',
+      date: new Date(incident.timestamp).toISOString().split('T')[0],
+      time: new Date(incident.timestamp).toTimeString().slice(0, 5)
+    }));
+
+    const convertedPoops: Entry[] = poops.map((poop) => ({
+      id: poop.id,
+      entryType: 'poop',
+      consistency: poop.consistency,
+      notes: poop.notes || '',
+      date: new Date(poop.timestamp).toISOString().split('T')[0],
+      time: new Date(poop.timestamp).toTimeString().slice(0, 5)
+    }));
+
+    const convertedFoods: Entry[] = foods.map((food) => ({
+      id: food.id,
+      entryType: 'food',
+      foodItem: food.foodItem,
+      amountConsumed: food.amountConsumed,
+      notes: food.notes || '',
+      date: new Date(food.timestamp).toISOString().split('T')[0],
+      time: new Date(food.timestamp).toTimeString().slice(0, 5)
+    }));
+
+    const allEntries = [...convertedIncidents, ...convertedPoops, ...convertedFoods];
+    allEntries.sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.time}`);
+      const dateB = new Date(`${b.date}T${b.time}`);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    return allEntries;
+  };
+
   const [expansionLevel, setExpansionLevel] = useState<ExpansionLevel>('collapsed');
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,112 +167,14 @@ export default function Home() {
   useEffect(() => {
     async function loadEntries() {
       try {
-        const [incidentsRes, poopsRes, foodsRes] = await Promise.all([
-          fetch('/api/incidents'),
-          fetch('/api/poops'),
-          fetch('/api/foods')
-        ]);
+        const response = await fetch('/api/entries');
 
-        let incidents = [];
-        let poops = [];
-        let foods = [];
-
-        if (incidentsRes.ok) {
-          incidents = await incidentsRes.json();
-        }
-        if (poopsRes.ok) {
-          poops = await poopsRes.json();
-        }
-        if (foodsRes.ok) {
-          foods = await foodsRes.json();
+        if (!response.ok) {
+          throw new Error('Failed to fetch entries');
         }
 
-        // Convert API incidents to Entry format
-        const convertedIncidents: Entry[] = incidents.map((incident: {
-          id: string;
-          timestamp: string;
-          behaviorText: string | null;
-          intensity: number;
-          durationSec: number | null;
-          notes: string | null;
-        }) => {
-          const timestamp = new Date(incident.timestamp);
-          const intensityToSeverity = (intensity: number): string => {
-            if (intensity <= 2) return 'Low';
-            if (intensity <= 3) return 'Medium';
-            return 'High';
-          };
-
-          const formatDuration = (secs: number | null | undefined) => {
-            if (!secs || secs === 0) return '';
-            const mins = Math.floor(secs / 60);
-            const remainingSecs = secs % 60;
-            if (mins === 0) return `${remainingSecs}s`;
-            if (remainingSecs === 0) return `${mins}m`;
-            return `${mins}m ${remainingSecs}s`;
-          };
-
-          return {
-            id: incident.id,
-            entryType: 'incident',
-            type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
-            severity: intensityToSeverity(incident.intensity),
-            duration: formatDuration(incident.durationSec),
-            trigger: '', // Extract from notes if needed
-            notes: incident.notes || '',
-            consequence: [],
-            customConsequence: '',
-            date: timestamp.toISOString().split('T')[0],
-            time: timestamp.toTimeString().slice(0, 5)
-          };
-        });
-
-        // Convert API poops to Entry format
-        const convertedPoops: Entry[] = poops.map((poop: {
-          id: string;
-          timestamp: string;
-          consistency: string;
-          notes: string | null;
-        }) => {
-          const timestamp = new Date(poop.timestamp);
-          return {
-            id: poop.id,
-            entryType: 'poop',
-            consistency: poop.consistency,
-            notes: poop.notes || '',
-            date: timestamp.toISOString().split('T')[0],
-            time: timestamp.toTimeString().slice(0, 5)
-          };
-        });
-
-        // Convert API foods to Entry format
-        const convertedFoods: Entry[] = foods.map((food: {
-          id: string;
-          timestamp: string;
-          foodItem: string;
-          amountConsumed: string;
-          notes: string | null;
-        }) => {
-          const timestamp = new Date(food.timestamp);
-          return {
-            id: food.id,
-            entryType: 'food',
-            foodItem: food.foodItem,
-            amountConsumed: food.amountConsumed,
-            notes: food.notes || '',
-            date: timestamp.toISOString().split('T')[0],
-            time: timestamp.toTimeString().slice(0, 5)
-          };
-        });
-
-        // Combine all entries and sort by date
-        const allEntries = [...convertedIncidents, ...convertedPoops, ...convertedFoods];
-        allEntries.sort((a, b) => {
-          const dateA = new Date(`${a.date}T${a.time}`);
-          const dateB = new Date(`${b.date}T${b.time}`);
-          return dateB.getTime() - dateA.getTime();
-        });
-
+        const { incidents, poops, foods } = await response.json();
+        const allEntries = convertApiResponseToEntries(incidents, poops, foods);
         setEntries(allEntries);
       } catch (error) {
         console.error('Error loading entries:', error);
@@ -327,101 +325,12 @@ export default function Home() {
 
         // Reload all entries from database to stay in sync
         console.log('Reloading all entries from database...');
-        const [reloadIncidentsRes, reloadPoopsRes, reloadFoodsRes] = await Promise.all([
-          fetch('/api/incidents'),
-          fetch('/api/poops'),
-          fetch('/api/foods')
-        ]);
+        const reloadResponse = await fetch('/api/entries');
 
-        if (reloadIncidentsRes.ok && reloadPoopsRes.ok && reloadFoodsRes.ok) {
-          const incidents = await reloadIncidentsRes.json();
-          const poops = await reloadPoopsRes.json();
-          const foods = await reloadFoodsRes.json();
-
+        if (reloadResponse.ok) {
+          const { incidents, poops, foods } = await reloadResponse.json();
           console.log('Loaded entries:', incidents.length, poops.length, foods.length);
-
-          const convertedIncidents: Entry[] = incidents.map((incident: {
-            id: string;
-            timestamp: string;
-            behaviorText: string | null;
-            intensity: number;
-            durationSec: number | null;
-            notes: string | null;
-          }) => {
-            const timestamp = new Date(incident.timestamp);
-            const intensityToSeverity = (intensity: number): string => {
-              if (intensity <= 2) return 'Low';
-              if (intensity <= 3) return 'Medium';
-              return 'High';
-            };
-
-            const formatDuration = (secs: number | null | undefined) => {
-              if (!secs || secs === 0) return '';
-              const mins = Math.floor(secs / 60);
-              const remainingSecs = secs % 60;
-              if (mins === 0) return `${remainingSecs}s`;
-              if (remainingSecs === 0) return `${mins}m`;
-              return `${mins}m ${remainingSecs}s`;
-            };
-
-            return {
-              id: incident.id,
-              entryType: 'incident',
-              type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
-              severity: intensityToSeverity(incident.intensity),
-              duration: formatDuration(incident.durationSec),
-              trigger: '',
-              notes: incident.notes || '',
-              consequence: [],
-              customConsequence: '',
-              date: timestamp.toISOString().split('T')[0],
-              time: timestamp.toTimeString().slice(0, 5)
-            };
-          });
-
-          const convertedPoops: Entry[] = poops.map((poop: {
-            id: string;
-            timestamp: string;
-            consistency: string;
-            notes: string | null;
-          }) => {
-            const timestamp = new Date(poop.timestamp);
-            return {
-              id: poop.id,
-              entryType: 'poop',
-              consistency: poop.consistency,
-              notes: poop.notes || '',
-              date: timestamp.toISOString().split('T')[0],
-              time: timestamp.toTimeString().slice(0, 5)
-            };
-          });
-
-          const convertedFoods: Entry[] = foods.map((food: {
-            id: string;
-            timestamp: string;
-            foodItem: string;
-            amountConsumed: string;
-            notes: string | null;
-          }) => {
-            const timestamp = new Date(food.timestamp);
-            return {
-              id: food.id,
-              entryType: 'food',
-              foodItem: food.foodItem,
-              amountConsumed: food.amountConsumed,
-              notes: food.notes || '',
-              date: timestamp.toISOString().split('T')[0],
-              time: timestamp.toTimeString().slice(0, 5)
-            };
-          });
-
-          const allEntries = [...convertedIncidents, ...convertedPoops, ...convertedFoods];
-          allEntries.sort((a, b) => {
-            const dateA = new Date(`${a.date}T${a.time}`);
-            const dateB = new Date(`${b.date}T${b.time}`);
-            return dateB.getTime() - dateA.getTime();
-          });
-
+          const allEntries = convertApiResponseToEntries(incidents, poops, foods);
           setEntries(allEntries);
         } else {
           console.error('Failed to reload entries');
@@ -531,87 +440,16 @@ export default function Home() {
       const savedPoop = await response.json();
       console.log('Poop saved successfully:', savedPoop.id);
 
-      // Reload poops from database to stay in sync
-      console.log('Reloading poops from database...');
-      const reloadResponse = await fetch('/api/poops');
+      // Reload all entries from database to stay in sync
+      console.log('Reloading all entries from database...');
+      const reloadResponse = await fetch('/api/entries');
       if (reloadResponse.ok) {
-        const poops = await reloadResponse.json();
-        console.log('Loaded poops:', poops.length);
-
-        // Also reload incidents
-        const incidentsResponse = await fetch('/api/incidents');
-        if (incidentsResponse.ok) {
-          const incidents = await incidentsResponse.json();
-
-          // Combine and convert all entries
-          const allEntries: Entry[] = [
-            ...incidents.map((incident: {
-              id: string;
-              timestamp: string;
-              behaviorText: string | null;
-              intensity: number;
-              durationSec: number | null;
-              notes: string | null;
-            }) => {
-              const timestamp = new Date(incident.timestamp);
-              const intensityToSeverity = (intensity: number): string => {
-                if (intensity <= 2) return 'Low';
-                if (intensity <= 3) return 'Medium';
-                return 'High';
-              };
-
-              const formatDuration = (secs: number | null | undefined) => {
-                if (!secs || secs === 0) return '';
-                const mins = Math.floor(secs / 60);
-                const remainingSecs = secs % 60;
-                if (mins === 0) return `${remainingSecs}s`;
-                if (remainingSecs === 0) return `${mins}m`;
-                return `${mins}m ${remainingSecs}s`;
-              };
-
-              return {
-                id: incident.id,
-                entryType: 'incident',
-                type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
-                severity: intensityToSeverity(incident.intensity),
-                duration: formatDuration(incident.durationSec),
-                trigger: '',
-                notes: incident.notes || '',
-                consequence: [],
-                customConsequence: '',
-                date: timestamp.toISOString().split('T')[0],
-                time: timestamp.toTimeString().slice(0, 5)
-              };
-            }),
-            ...poops.map((poop: {
-              id: string;
-              timestamp: string;
-              consistency: string;
-              notes: string | null;
-            }) => {
-              const timestamp = new Date(poop.timestamp);
-              return {
-                id: poop.id,
-                entryType: 'poop',
-                consistency: poop.consistency,
-                notes: poop.notes || '',
-                date: timestamp.toISOString().split('T')[0],
-                time: timestamp.toTimeString().slice(0, 5)
-              };
-            })
-          ];
-
-          // Sort by date descending
-          allEntries.sort((a, b) => {
-            const dateA = new Date(`${a.date}T${a.time}`);
-            const dateB = new Date(`${b.date}T${b.time}`);
-            return dateB.getTime() - dateA.getTime();
-          });
-
-          setEntries(allEntries);
-        }
+        const { incidents, poops, foods } = await reloadResponse.json();
+        console.log('Loaded entries:', incidents.length, poops.length, foods.length);
+        const allEntries = convertApiResponseToEntries(incidents, poops, foods);
+        setEntries(allEntries);
       } else {
-        console.error('Failed to reload poops:', reloadResponse.status);
+        console.error('Failed to reload entries:', reloadResponse.status);
       }
 
       // Reset form on success
@@ -726,108 +564,16 @@ export default function Home() {
       const savedFood = await response.json();
       console.log('Food saved successfully:', savedFood.id);
 
-      // Reload foods from database to stay in sync
-      console.log('Reloading foods from database...');
-      const reloadResponse = await fetch('/api/foods');
+      // Reload all entries from database to stay in sync
+      console.log('Reloading all entries from database...');
+      const reloadResponse = await fetch('/api/entries');
       if (reloadResponse.ok) {
-        const foods = await reloadResponse.json();
-        console.log('Loaded foods:', foods.length);
-
-        // Also reload incidents and poops
-        const incidentsResponse = await fetch('/api/incidents');
-        const poopsResponse = await fetch('/api/poops');
-
-        if (incidentsResponse.ok && poopsResponse.ok) {
-          const incidents = await incidentsResponse.json();
-          const poops = await poopsResponse.json();
-
-          // Combine and convert all entries
-          const allEntries: Entry[] = [
-            ...incidents.map((incident: {
-              id: string;
-              timestamp: string;
-              behaviorText: string | null;
-              intensity: number;
-              durationSec: number | null;
-              notes: string | null;
-            }) => {
-              const timestamp = new Date(incident.timestamp);
-              const intensityToSeverity = (intensity: number): string => {
-                if (intensity <= 2) return 'Low';
-                if (intensity <= 3) return 'Medium';
-                return 'High';
-              };
-
-              const formatDuration = (secs: number | null | undefined) => {
-                if (!secs || secs === 0) return '';
-                const mins = Math.floor(secs / 60);
-                const remainingSecs = secs % 60;
-                if (mins === 0) return `${remainingSecs}s`;
-                if (remainingSecs === 0) return `${mins}m`;
-                return `${mins}m ${remainingSecs}s`;
-              };
-
-              return {
-                id: incident.id,
-                entryType: 'incident',
-                type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
-                severity: intensityToSeverity(incident.intensity),
-                duration: formatDuration(incident.durationSec),
-                trigger: '',
-                notes: incident.notes || '',
-                consequence: [],
-                customConsequence: '',
-                date: timestamp.toISOString().split('T')[0],
-                time: timestamp.toTimeString().slice(0, 5)
-              };
-            }),
-            ...poops.map((poop: {
-              id: string;
-              timestamp: string;
-              consistency: string;
-              notes: string | null;
-            }) => {
-              const timestamp = new Date(poop.timestamp);
-              return {
-                id: poop.id,
-                entryType: 'poop',
-                consistency: poop.consistency,
-                notes: poop.notes || '',
-                date: timestamp.toISOString().split('T')[0],
-                time: timestamp.toTimeString().slice(0, 5)
-              };
-            }),
-            ...foods.map((food: {
-              id: string;
-              timestamp: string;
-              foodItem: string;
-              amountConsumed: string;
-              notes: string | null;
-            }) => {
-              const timestamp = new Date(food.timestamp);
-              return {
-                id: food.id,
-                entryType: 'food',
-                foodItem: food.foodItem,
-                amountConsumed: food.amountConsumed,
-                notes: food.notes || '',
-                date: timestamp.toISOString().split('T')[0],
-                time: timestamp.toTimeString().slice(0, 5)
-              };
-            })
-          ];
-
-          // Sort by date descending
-          allEntries.sort((a, b) => {
-            const dateA = new Date(`${a.date}T${a.time}`);
-            const dateB = new Date(`${b.date}T${b.time}`);
-            return dateB.getTime() - dateA.getTime();
-          });
-
-          setEntries(allEntries);
-        }
+        const { incidents, poops, foods } = await reloadResponse.json();
+        console.log('Loaded entries:', incidents.length, poops.length, foods.length);
+        const allEntries = convertApiResponseToEntries(incidents, poops, foods);
+        setEntries(allEntries);
       } else {
-        console.error('Failed to reload foods:', reloadResponse.status);
+        console.error('Failed to reload entries:', reloadResponse.status);
       }
 
       // Reset form on success
@@ -888,98 +634,10 @@ export default function Home() {
       toast.success(`${entryType} deleted successfully`);
 
       // Reload all entries from database
-      const incidentsResponse = await fetch('/api/incidents');
-      const poopsResponse = await fetch('/api/poops');
-      const foodsResponse = await fetch('/api/foods');
-
-      if (incidentsResponse.ok && poopsResponse.ok && foodsResponse.ok) {
-        const incidents = await incidentsResponse.json();
-        const poops = await poopsResponse.json();
-        const foods = await foodsResponse.json();
-
-        // Combine and convert all entries
-        const allEntries: Entry[] = [
-          ...incidents.map((incident: {
-            id: string;
-            timestamp: string;
-            behaviorText: string | null;
-            intensity: number;
-            durationSec: number | null;
-            notes: string | null;
-          }) => {
-            const timestamp = new Date(incident.timestamp);
-            const intensityToSeverity = (intensity: number): string => {
-              if (intensity <= 2) return 'Low';
-              if (intensity <= 3) return 'Medium';
-              return 'High';
-            };
-
-            const formatDuration = (secs: number | null | undefined) => {
-              if (!secs || secs === 0) return '';
-              const mins = Math.floor(secs / 60);
-              const remainingSecs = secs % 60;
-              if (mins === 0) return `${remainingSecs}s`;
-              if (remainingSecs === 0) return `${mins}m`;
-              return `${mins}m ${remainingSecs}s`;
-            };
-
-            return {
-              id: incident.id,
-              entryType: 'incident',
-              type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
-              severity: intensityToSeverity(incident.intensity),
-              duration: formatDuration(incident.durationSec),
-              trigger: '',
-              notes: incident.notes || '',
-              consequence: [],
-              customConsequence: '',
-              date: timestamp.toISOString().split('T')[0],
-              time: timestamp.toTimeString().slice(0, 5)
-            };
-          }),
-          ...poops.map((poop: {
-            id: string;
-            timestamp: string;
-            consistency: string;
-            notes: string | null;
-          }) => {
-            const timestamp = new Date(poop.timestamp);
-            return {
-              id: poop.id,
-              entryType: 'poop',
-              consistency: poop.consistency,
-              notes: poop.notes || '',
-              date: timestamp.toISOString().split('T')[0],
-              time: timestamp.toTimeString().slice(0, 5)
-            };
-          }),
-          ...foods.map((food: {
-            id: string;
-            timestamp: string;
-            foodItem: string;
-            amountConsumed: string;
-            notes: string | null;
-          }) => {
-            const timestamp = new Date(food.timestamp);
-            return {
-              id: food.id,
-              entryType: 'food',
-              foodItem: food.foodItem,
-              amountConsumed: food.amountConsumed,
-              notes: food.notes || '',
-              date: timestamp.toISOString().split('T')[0],
-              time: timestamp.toTimeString().slice(0, 5)
-            };
-          })
-        ];
-
-        // Sort by date descending
-        allEntries.sort((a, b) => {
-          const dateA = new Date(`${a.date}T${a.time}`);
-          const dateB = new Date(`${b.date}T${b.time}`);
-          return dateB.getTime() - dateA.getTime();
-        });
-
+      const reloadResponse = await fetch('/api/entries');
+      if (reloadResponse.ok) {
+        const { incidents, poops, foods } = await reloadResponse.json();
+        const allEntries = convertApiResponseToEntries(incidents, poops, foods);
         setEntries(allEntries);
       }
     } catch (error) {
