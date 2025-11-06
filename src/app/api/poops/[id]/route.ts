@@ -64,6 +64,39 @@ export async function PATCH(
   }
 }
 
+// PUT /api/poops/[id] - Update a poop entry (simple update from UI)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {};
+    
+    if (body.consistency !== undefined) data.consistency = body.consistency;
+    if (body.notes !== undefined) data.notes = body.notes;
+
+    const poop = await prisma.poop.update({
+      where: { id },
+      data,
+      include: {
+        child: true,
+      },
+    });
+
+    return NextResponse.json(poop);
+  } catch (error) {
+    console.error('Error updating poop entry:', error);
+    return NextResponse.json(
+      { error: 'Failed to update poop entry' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/poops/[id] - Delete a poop entry
 export async function DELETE(
   request: NextRequest,
