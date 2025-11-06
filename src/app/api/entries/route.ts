@@ -7,8 +7,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const childId = searchParams.get('childId');
 
-    // Fetch all entry types in parallel
-    const [incidents, poops, foods] = await Promise.all([
+    // Fetch all entry types using a single transaction to avoid exhausting the connection pool
+    const [incidents, poops, foods] = await prisma.$transaction([
       prisma.incident.findMany({
         where: childId ? { childId } : undefined,
         include: {
@@ -50,7 +50,11 @@ export async function GET(request: NextRequest) {
       foods,
     });
   } catch (error) {
-    console.error('Error fetching entries:', error);
+    if (error instanceof Error) {
+      console.error('Error fetching entries:', error.message, error.stack);
+    } else {
+      console.error('Error fetching entries:', error);
+    }
     return NextResponse.json(
       { error: 'Failed to fetch entries' },
       { status: 500 }
