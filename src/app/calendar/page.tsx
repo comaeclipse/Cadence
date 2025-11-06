@@ -8,7 +8,6 @@ import type { Incident } from "@/types/incident";
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +77,6 @@ export default function CalendarPage() {
       setExpandedDay(null);
     } else {
       setExpandedDay(dateStr);
-      setSelectedDate(dateStr);
     }
   };
 
@@ -116,7 +114,7 @@ export default function CalendarPage() {
 
           {/* Calendar Days */}
           <div className="grid grid-cols-7 gap-1">
-            {days.map((day, index) => {
+            {days.map((day) => {
               if (typeof day !== 'number') return day;
 
               const dateStr = formatDateKey(year, month, day);

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/db";
 import type { Incident } from "@/types/incident";
 import { MobileLayout } from "@/components/mobile-layout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Bar } from "recharts";
 
 export default function ReportsPage() {

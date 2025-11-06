@@ -53,7 +53,6 @@ export async function PATCH(
       data: {
         timestamp: body.timestamp ? new Date(body.timestamp) : undefined,
         behaviorText: body.behaviorText,
-        intensity: body.intensity,
         durationSec: body.durationSec,
         latencySec: body.latencySec,
         locationId: body.locationId,
