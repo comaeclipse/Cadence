@@ -17,6 +17,8 @@ model Child {
   dob       DateTime?
   avatarUrl String?
   incidents Incident[]
+  foods     Food[]
+  poops     Poop[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -99,4 +101,33 @@ model Attachment {
   updatedAt  DateTime @updatedAt
 
   @@index([incidentId])
+}
+
+model Food {
+  id                String   @id @default(cuid())
+  childId           String
+  child             Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  timestamp         DateTime
+  foodItem          String   // e.g., "Apple", "Sandwich"
+  amountConsumed    String   // "tried it", "ate some", "all of it"
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([childId])
+  @@index([timestamp])
+}
+
+model Poop {
+  id          String   @id @default(cuid())
+  childId     String
+  child       Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  timestamp   DateTime
+  consistency String   // "hard", "formed", "soft", "liquid", etc.
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([childId])
+  @@index([timestamp])
 }

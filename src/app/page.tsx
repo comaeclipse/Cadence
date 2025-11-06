@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-type ExpansionLevel = 'collapsed' | 'category' | 'incident' | 'poop';
-type EntryType = 'incident' | 'poop';
+type ExpansionLevel = 'collapsed' | 'category' | 'incident' | 'poop' | 'food';
+type EntryType = 'incident' | 'poop' | 'food';
 
 interface Entry {
   id: string;
@@ -33,6 +33,9 @@ interface Entry {
   customConsequence?: string;
   // Poop fields
   consistency?: string;
+  // Food fields
+  foodItem?: string;
+  amountConsumed?: string;
 }
 
 export default function Home() {
@@ -54,6 +57,8 @@ export default function Home() {
     consistency: '',
     consequence: [] as string[],
     customConsequence: '',
+    foodItem: '',
+    amountConsumed: '',
     timestamp: new Date()
   });
 
@@ -62,64 +67,125 @@ export default function Home() {
   const consistencyTypes = ['Soft', 'Normal', 'Hard', 'Formed', 'Loose', 'Watery'];
   const consequenceOptions = ['Gave attention', 'Break/help', 'Preferred item', 'Redirected', 'Ignored', 'Emotion cards', 'other/custom'];
 
-  // Load incidents from API on mount
+  // Load entries from API on mount
   useEffect(() => {
-    async function loadIncidents() {
+    async function loadEntries() {
       try {
-        const response = await fetch('/api/incidents');
-        if (response.ok) {
-          const incidents = await response.json();
+        const [incidentsRes, poopsRes, foodsRes] = await Promise.all([
+          fetch('/api/incidents'),
+          fetch('/api/poops'),
+          fetch('/api/foods')
+        ]);
 
-          // Convert API incidents to Entry format
-          const convertedEntries: Entry[] = incidents.map((incident: {
-            id: string;
-            timestamp: string;
-            behaviorText: string | null;
-            intensity: number;
-            durationSec: number | null;
-            notes: string | null;
-          }) => {
-            const timestamp = new Date(incident.timestamp);
-            const intensityToSeverity = (intensity: number): string => {
-              if (intensity <= 2) return 'Low';
-              if (intensity <= 3) return 'Medium';
-              return 'High';
-            };
+        let incidents = [];
+        let poops = [];
+        let foods = [];
 
-            const formatDuration = (secs: number | null | undefined) => {
-              if (!secs || secs === 0) return '';
-              const mins = Math.floor(secs / 60);
-              const remainingSecs = secs % 60;
-              if (mins === 0) return `${remainingSecs}s`;
-              if (remainingSecs === 0) return `${mins}m`;
-              return `${mins}m ${remainingSecs}s`;
-            };
-
-            return {
-              id: incident.id,
-              entryType: 'incident',
-              type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
-              severity: intensityToSeverity(incident.intensity),
-              duration: formatDuration(incident.durationSec),
-              trigger: '', // Extract from notes if needed
-              notes: incident.notes || '',
-              consequence: [],
-              customConsequence: '',
-              date: timestamp.toISOString().split('T')[0],
-              time: timestamp.toTimeString().slice(0, 5)
-            };
-          });
-
-          setEntries(convertedEntries);
+        if (incidentsRes.ok) {
+          incidents = await incidentsRes.json();
         }
+        if (poopsRes.ok) {
+          poops = await poopsRes.json();
+        }
+        if (foodsRes.ok) {
+          foods = await foodsRes.json();
+        }
+
+        // Convert API incidents to Entry format
+        const convertedIncidents: Entry[] = incidents.map((incident: {
+          id: string;
+          timestamp: string;
+          behaviorText: string | null;
+          intensity: number;
+          durationSec: number | null;
+          notes: string | null;
+        }) => {
+          const timestamp = new Date(incident.timestamp);
+          const intensityToSeverity = (intensity: number): string => {
+            if (intensity <= 2) return 'Low';
+            if (intensity <= 3) return 'Medium';
+            return 'High';
+          };
+
+          const formatDuration = (secs: number | null | undefined) => {
+            if (!secs || secs === 0) return '';
+            const mins = Math.floor(secs / 60);
+            const remainingSecs = secs % 60;
+            if (mins === 0) return `${remainingSecs}s`;
+            if (remainingSecs === 0) return `${mins}m`;
+            return `${mins}m ${remainingSecs}s`;
+          };
+
+          return {
+            id: incident.id,
+            entryType: 'incident',
+            type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
+            severity: intensityToSeverity(incident.intensity),
+            duration: formatDuration(incident.durationSec),
+            trigger: '', // Extract from notes if needed
+            notes: incident.notes || '',
+            consequence: [],
+            customConsequence: '',
+            date: timestamp.toISOString().split('T')[0],
+            time: timestamp.toTimeString().slice(0, 5)
+          };
+        });
+
+        // Convert API poops to Entry format
+        const convertedPoops: Entry[] = poops.map((poop: {
+          id: string;
+          timestamp: string;
+          consistency: string;
+          notes: string | null;
+        }) => {
+          const timestamp = new Date(poop.timestamp);
+          return {
+            id: poop.id,
+            entryType: 'poop',
+            consistency: poop.consistency,
+            notes: poop.notes || '',
+            date: timestamp.toISOString().split('T')[0],
+            time: timestamp.toTimeString().slice(0, 5)
+          };
+        });
+
+        // Convert API foods to Entry format
+        const convertedFoods: Entry[] = foods.map((food: {
+          id: string;
+          timestamp: string;
+          foodItem: string;
+          amountConsumed: string;
+          notes: string | null;
+        }) => {
+          const timestamp = new Date(food.timestamp);
+          return {
+            id: food.id,
+            entryType: 'food',
+            foodItem: food.foodItem,
+            amountConsumed: food.amountConsumed,
+            notes: food.notes || '',
+            date: timestamp.toISOString().split('T')[0],
+            time: timestamp.toTimeString().slice(0, 5)
+          };
+        });
+
+        // Combine all entries and sort by date
+        const allEntries = [...convertedIncidents, ...convertedPoops, ...convertedFoods];
+        allEntries.sort((a, b) => {
+          const dateA = new Date(`${a.date}T${a.time}`);
+          const dateB = new Date(`${b.date}T${b.time}`);
+          return dateB.getTime() - dateA.getTime();
+        });
+
+        setEntries(allEntries);
       } catch (error) {
-        console.error('Error loading incidents:', error);
+        console.error('Error loading entries:', error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadIncidents();
+    loadEntries();
   }, []);
 
   const handleSubmit = async () => {
@@ -259,13 +325,22 @@ export default function Home() {
         const savedIncident = await response.json();
         console.log('Incident saved successfully:', savedIncident.id);
 
-        // Reload incidents from database to stay in sync
-        console.log('Reloading incidents from database...');
-        const reloadResponse = await fetch('/api/incidents');
-        if (reloadResponse.ok) {
-          const incidents = await reloadResponse.json();
-          console.log('Loaded incidents:', incidents.length);
-          const convertedEntries: Entry[] = incidents.map((incident: {
+        // Reload all entries from database to stay in sync
+        console.log('Reloading all entries from database...');
+        const [reloadIncidentsRes, reloadPoopsRes, reloadFoodsRes] = await Promise.all([
+          fetch('/api/incidents'),
+          fetch('/api/poops'),
+          fetch('/api/foods')
+        ]);
+
+        if (reloadIncidentsRes.ok && reloadPoopsRes.ok && reloadFoodsRes.ok) {
+          const incidents = await reloadIncidentsRes.json();
+          const poops = await reloadPoopsRes.json();
+          const foods = await reloadFoodsRes.json();
+
+          console.log('Loaded entries:', incidents.length, poops.length, foods.length);
+
+          const convertedIncidents: Entry[] = incidents.map((incident: {
             id: string;
             timestamp: string;
             behaviorText: string | null;
@@ -303,13 +378,57 @@ export default function Home() {
               time: timestamp.toTimeString().slice(0, 5)
             };
           });
-          setEntries(convertedEntries);
+
+          const convertedPoops: Entry[] = poops.map((poop: {
+            id: string;
+            timestamp: string;
+            consistency: string;
+            notes: string | null;
+          }) => {
+            const timestamp = new Date(poop.timestamp);
+            return {
+              id: poop.id,
+              entryType: 'poop',
+              consistency: poop.consistency,
+              notes: poop.notes || '',
+              date: timestamp.toISOString().split('T')[0],
+              time: timestamp.toTimeString().slice(0, 5)
+            };
+          });
+
+          const convertedFoods: Entry[] = foods.map((food: {
+            id: string;
+            timestamp: string;
+            foodItem: string;
+            amountConsumed: string;
+            notes: string | null;
+          }) => {
+            const timestamp = new Date(food.timestamp);
+            return {
+              id: food.id,
+              entryType: 'food',
+              foodItem: food.foodItem,
+              amountConsumed: food.amountConsumed,
+              notes: food.notes || '',
+              date: timestamp.toISOString().split('T')[0],
+              time: timestamp.toTimeString().slice(0, 5)
+            };
+          });
+
+          const allEntries = [...convertedIncidents, ...convertedPoops, ...convertedFoods];
+          allEntries.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.time}`);
+            const dateB = new Date(`${b.date}T${b.time}`);
+            return dateB.getTime() - dateA.getTime();
+          });
+
+          setEntries(allEntries);
         } else {
-          console.error('Failed to reload incidents:', reloadResponse.status);
+          console.error('Failed to reload entries');
         }
 
         // Reset form on success
-        setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
+        setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
         setExpansionLevel('collapsed');
         console.log('Incident save complete!');
       } catch (error) {
@@ -322,17 +441,407 @@ export default function Home() {
     }
   };
 
-  const handlePoopSubmit = (consistency: string) => {
+  const handlePoopSubmit = async (consistency: string) => {
+    console.log('Starting poop save...');
+
+    // Create optimistic UI entry
     const newEntry: Entry = {
-      id: `poop-${Date.now()}`,
+      id: `temp-poop-${Date.now()}`,
       entryType: 'poop',
       consistency,
       date: formData.timestamp.toISOString().split('T')[0],
       time: formData.timestamp.toTimeString().slice(0, 5)
     };
+
+    // Store old entries for rollback if needed
+    const oldEntries = entries;
+
+    // Add to UI immediately for responsiveness
     setEntries([newEntry, ...entries]);
-    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
-    setExpansionLevel('collapsed');
+
+    try {
+      // Get or create default child
+      console.log('Fetching children...');
+      const childResponse = await fetch('/api/children');
+      let childId = '';
+
+      if (!childResponse.ok) {
+        const errorText = await childResponse.text();
+        console.error('Failed to fetch children:', childResponse.status, errorText);
+        throw new Error(`Failed to fetch children: ${childResponse.status}`);
+      }
+
+      const children = await childResponse.json();
+      console.log('Children found:', children.length);
+
+      if (children.length > 0) {
+        childId = children[0].id;
+        console.log('Using existing child:', childId);
+      } else {
+        // Create default child if none exists
+        console.log('Creating default child...');
+        const createChildResponse = await fetch('/api/children', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'Default Child' }),
+        });
+
+        if (!createChildResponse.ok) {
+          const errorText = await createChildResponse.text();
+          console.error('Failed to create child:', createChildResponse.status, errorText);
+          throw new Error(`Failed to create child: ${createChildResponse.status}`);
+        }
+
+        const newChild = await createChildResponse.json();
+        childId = newChild.id;
+        console.log('Created new child:', childId);
+      }
+
+      if (!childId) {
+        throw new Error('Failed to get or create child - no ID returned');
+      }
+
+      // Save to database
+      console.log('Saving poop to database...');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const poopData: any = {
+        childId,
+        timestamp: formData.timestamp.toISOString(),
+        consistency,
+      };
+
+      if (formData.notes) {
+        poopData.notes = formData.notes;
+      }
+
+      console.log('Poop data:', poopData);
+
+      const response = await fetch('/api/poops', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(poopData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to save poop:', response.status, errorText);
+        throw new Error(`Failed to save poop: ${response.status} - ${errorText}`);
+      }
+
+      const savedPoop = await response.json();
+      console.log('Poop saved successfully:', savedPoop.id);
+
+      // Reload poops from database to stay in sync
+      console.log('Reloading poops from database...');
+      const reloadResponse = await fetch('/api/poops');
+      if (reloadResponse.ok) {
+        const poops = await reloadResponse.json();
+        console.log('Loaded poops:', poops.length);
+
+        // Also reload incidents
+        const incidentsResponse = await fetch('/api/incidents');
+        if (incidentsResponse.ok) {
+          const incidents = await incidentsResponse.json();
+
+          // Combine and convert all entries
+          const allEntries: Entry[] = [
+            ...incidents.map((incident: {
+              id: string;
+              timestamp: string;
+              behaviorText: string | null;
+              intensity: number;
+              durationSec: number | null;
+              notes: string | null;
+            }) => {
+              const timestamp = new Date(incident.timestamp);
+              const intensityToSeverity = (intensity: number): string => {
+                if (intensity <= 2) return 'Low';
+                if (intensity <= 3) return 'Medium';
+                return 'High';
+              };
+
+              const formatDuration = (secs: number | null | undefined) => {
+                if (!secs || secs === 0) return '';
+                const mins = Math.floor(secs / 60);
+                const remainingSecs = secs % 60;
+                if (mins === 0) return `${remainingSecs}s`;
+                if (remainingSecs === 0) return `${mins}m`;
+                return `${mins}m ${remainingSecs}s`;
+              };
+
+              return {
+                id: incident.id,
+                entryType: 'incident',
+                type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
+                severity: intensityToSeverity(incident.intensity),
+                duration: formatDuration(incident.durationSec),
+                trigger: '',
+                notes: incident.notes || '',
+                consequence: [],
+                customConsequence: '',
+                date: timestamp.toISOString().split('T')[0],
+                time: timestamp.toTimeString().slice(0, 5)
+              };
+            }),
+            ...poops.map((poop: {
+              id: string;
+              timestamp: string;
+              consistency: string;
+              notes: string | null;
+            }) => {
+              const timestamp = new Date(poop.timestamp);
+              return {
+                id: poop.id,
+                entryType: 'poop',
+                consistency: poop.consistency,
+                notes: poop.notes || '',
+                date: timestamp.toISOString().split('T')[0],
+                time: timestamp.toTimeString().slice(0, 5)
+              };
+            })
+          ];
+
+          // Sort by date descending
+          allEntries.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.time}`);
+            const dateB = new Date(`${b.date}T${b.time}`);
+            return dateB.getTime() - dateA.getTime();
+          });
+
+          setEntries(allEntries);
+        }
+      } else {
+        console.error('Failed to reload poops:', reloadResponse.status);
+      }
+
+      // Reset form on success
+      setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+      setExpansionLevel('collapsed');
+      toast.success('Poop logged successfully');
+      console.log('Poop save complete!');
+    } catch (error) {
+      console.error('Error saving poop:', error);
+      // Revert to old entries on error
+      setEntries(oldEntries);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save poop: ${errorMessage}`);
+    }
+  };
+
+  const handleFoodSubmit = async () => {
+    if (!formData.foodItem || !formData.amountConsumed) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    console.log('Starting food save...');
+
+    // Create optimistic UI entry
+    const newEntry: Entry = {
+      id: `temp-food-${Date.now()}`,
+      entryType: 'food',
+      foodItem: formData.foodItem,
+      amountConsumed: formData.amountConsumed,
+      notes: formData.notes,
+      date: formData.timestamp.toISOString().split('T')[0],
+      time: formData.timestamp.toTimeString().slice(0, 5)
+    };
+
+    // Store old entries for rollback if needed
+    const oldEntries = entries;
+
+    // Add to UI immediately for responsiveness
+    setEntries([newEntry, ...entries]);
+
+    try {
+      // Get or create default child
+      console.log('Fetching children...');
+      const childResponse = await fetch('/api/children');
+      let childId = '';
+
+      if (!childResponse.ok) {
+        const errorText = await childResponse.text();
+        console.error('Failed to fetch children:', childResponse.status, errorText);
+        throw new Error(`Failed to fetch children: ${childResponse.status}`);
+      }
+
+      const children = await childResponse.json();
+      console.log('Children found:', children.length);
+
+      if (children.length > 0) {
+        childId = children[0].id;
+        console.log('Using existing child:', childId);
+      } else {
+        // Create default child if none exists
+        console.log('Creating default child...');
+        const createChildResponse = await fetch('/api/children', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'Default Child' }),
+        });
+
+        if (!createChildResponse.ok) {
+          const errorText = await createChildResponse.text();
+          console.error('Failed to create child:', createChildResponse.status, errorText);
+          throw new Error(`Failed to create child: ${createChildResponse.status}`);
+        }
+
+        const newChild = await createChildResponse.json();
+        childId = newChild.id;
+        console.log('Created new child:', childId);
+      }
+
+      if (!childId) {
+        throw new Error('Failed to get or create child - no ID returned');
+      }
+
+      // Save to database
+      console.log('Saving food to database...');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const foodData: any = {
+        childId,
+        timestamp: formData.timestamp.toISOString(),
+        foodItem: formData.foodItem,
+        amountConsumed: formData.amountConsumed,
+      };
+
+      if (formData.notes) {
+        foodData.notes = formData.notes;
+      }
+
+      console.log('Food data:', foodData);
+
+      const response = await fetch('/api/foods', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(foodData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to save food:', response.status, errorText);
+        throw new Error(`Failed to save food: ${response.status} - ${errorText}`);
+      }
+
+      const savedFood = await response.json();
+      console.log('Food saved successfully:', savedFood.id);
+
+      // Reload foods from database to stay in sync
+      console.log('Reloading foods from database...');
+      const reloadResponse = await fetch('/api/foods');
+      if (reloadResponse.ok) {
+        const foods = await reloadResponse.json();
+        console.log('Loaded foods:', foods.length);
+
+        // Also reload incidents and poops
+        const incidentsResponse = await fetch('/api/incidents');
+        const poopsResponse = await fetch('/api/poops');
+
+        if (incidentsResponse.ok && poopsResponse.ok) {
+          const incidents = await incidentsResponse.json();
+          const poops = await poopsResponse.json();
+
+          // Combine and convert all entries
+          const allEntries: Entry[] = [
+            ...incidents.map((incident: {
+              id: string;
+              timestamp: string;
+              behaviorText: string | null;
+              intensity: number;
+              durationSec: number | null;
+              notes: string | null;
+            }) => {
+              const timestamp = new Date(incident.timestamp);
+              const intensityToSeverity = (intensity: number): string => {
+                if (intensity <= 2) return 'Low';
+                if (intensity <= 3) return 'Medium';
+                return 'High';
+              };
+
+              const formatDuration = (secs: number | null | undefined) => {
+                if (!secs || secs === 0) return '';
+                const mins = Math.floor(secs / 60);
+                const remainingSecs = secs % 60;
+                if (mins === 0) return `${remainingSecs}s`;
+                if (remainingSecs === 0) return `${mins}m`;
+                return `${mins}m ${remainingSecs}s`;
+              };
+
+              return {
+                id: incident.id,
+                entryType: 'incident',
+                type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
+                severity: intensityToSeverity(incident.intensity),
+                duration: formatDuration(incident.durationSec),
+                trigger: '',
+                notes: incident.notes || '',
+                consequence: [],
+                customConsequence: '',
+                date: timestamp.toISOString().split('T')[0],
+                time: timestamp.toTimeString().slice(0, 5)
+              };
+            }),
+            ...poops.map((poop: {
+              id: string;
+              timestamp: string;
+              consistency: string;
+              notes: string | null;
+            }) => {
+              const timestamp = new Date(poop.timestamp);
+              return {
+                id: poop.id,
+                entryType: 'poop',
+                consistency: poop.consistency,
+                notes: poop.notes || '',
+                date: timestamp.toISOString().split('T')[0],
+                time: timestamp.toTimeString().slice(0, 5)
+              };
+            }),
+            ...foods.map((food: {
+              id: string;
+              timestamp: string;
+              foodItem: string;
+              amountConsumed: string;
+              notes: string | null;
+            }) => {
+              const timestamp = new Date(food.timestamp);
+              return {
+                id: food.id,
+                entryType: 'food',
+                foodItem: food.foodItem,
+                amountConsumed: food.amountConsumed,
+                notes: food.notes || '',
+                date: timestamp.toISOString().split('T')[0],
+                time: timestamp.toTimeString().slice(0, 5)
+              };
+            })
+          ];
+
+          // Sort by date descending
+          allEntries.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.time}`);
+            const dateB = new Date(`${b.date}T${b.time}`);
+            return dateB.getTime() - dateA.getTime();
+          });
+
+          setEntries(allEntries);
+        }
+      } else {
+        console.error('Failed to reload foods:', reloadResponse.status);
+      }
+
+      // Reset form on success
+      setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+      setExpansionLevel('collapsed');
+      toast.success('Food logged successfully');
+      console.log('Food save complete!');
+    } catch (error) {
+      console.error('Error saving food:', error);
+      // Revert to old entries on error
+      setEntries(oldEntries);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save food: ${errorMessage}`);
+    }
   };
 
   const handleDeleteClick = (entryId: string) => {
@@ -344,63 +853,139 @@ export default function Home() {
     if (!entryToDelete) return;
 
     try {
-      const response = await fetch(`/api/incidents/${entryToDelete}`, {
+      // Determine entry type based on current entries
+      const entryToRemove = entries.find(e => e.id === entryToDelete);
+      if (!entryToRemove) {
+        throw new Error('Entry not found');
+      }
+
+      let endpoint = '';
+      let entryType = '';
+
+      if (entryToRemove.entryType === 'incident') {
+        endpoint = `/api/incidents/${entryToDelete}`;
+        entryType = 'Incident';
+      } else if (entryToRemove.entryType === 'poop') {
+        endpoint = `/api/poops/${entryToDelete}`;
+        entryType = 'Poop entry';
+      } else if (entryToRemove.entryType === 'food') {
+        endpoint = `/api/foods/${entryToDelete}`;
+        entryType = 'Food entry';
+      }
+
+      if (!endpoint) {
+        throw new Error('Unknown entry type');
+      }
+
+      const response = await fetch(endpoint, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete incident');
+        throw new Error(`Failed to delete ${entryType.toLowerCase()}`);
       }
 
-      toast.success('Incident deleted successfully');
+      toast.success(`${entryType} deleted successfully`);
 
-      // Reload incidents from database
-      const reloadResponse = await fetch('/api/incidents');
-      if (reloadResponse.ok) {
-        const incidents = await reloadResponse.json();
-        const convertedEntries: Entry[] = incidents.map((incident: {
-          id: string;
-          timestamp: string;
-          behaviorText: string | null;
-          intensity: number;
-          durationSec: number | null;
-          notes: string | null;
-        }) => {
-          const timestamp = new Date(incident.timestamp);
-          const intensityToSeverity = (intensity: number): string => {
-            if (intensity <= 2) return 'Low';
-            if (intensity <= 3) return 'Medium';
-            return 'High';
-          };
+      // Reload all entries from database
+      const incidentsResponse = await fetch('/api/incidents');
+      const poopsResponse = await fetch('/api/poops');
+      const foodsResponse = await fetch('/api/foods');
 
-          const formatDuration = (secs: number | null | undefined) => {
-            if (!secs || secs === 0) return '';
-            const mins = Math.floor(secs / 60);
-            const remainingSecs = secs % 60;
-            if (mins === 0) return `${remainingSecs}s`;
-            if (remainingSecs === 0) return `${mins}m`;
-            return `${mins}m ${remainingSecs}s`;
-          };
+      if (incidentsResponse.ok && poopsResponse.ok && foodsResponse.ok) {
+        const incidents = await incidentsResponse.json();
+        const poops = await poopsResponse.json();
+        const foods = await foodsResponse.json();
 
-          return {
-            id: incident.id,
-            entryType: 'incident',
-            type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
-            severity: intensityToSeverity(incident.intensity),
-            duration: formatDuration(incident.durationSec),
-            trigger: '',
-            notes: incident.notes || '',
-            consequence: [],
-            customConsequence: '',
-            date: timestamp.toISOString().split('T')[0],
-            time: timestamp.toTimeString().slice(0, 5)
-          };
+        // Combine and convert all entries
+        const allEntries: Entry[] = [
+          ...incidents.map((incident: {
+            id: string;
+            timestamp: string;
+            behaviorText: string | null;
+            intensity: number;
+            durationSec: number | null;
+            notes: string | null;
+          }) => {
+            const timestamp = new Date(incident.timestamp);
+            const intensityToSeverity = (intensity: number): string => {
+              if (intensity <= 2) return 'Low';
+              if (intensity <= 3) return 'Medium';
+              return 'High';
+            };
+
+            const formatDuration = (secs: number | null | undefined) => {
+              if (!secs || secs === 0) return '';
+              const mins = Math.floor(secs / 60);
+              const remainingSecs = secs % 60;
+              if (mins === 0) return `${remainingSecs}s`;
+              if (remainingSecs === 0) return `${mins}m`;
+              return `${mins}m ${remainingSecs}s`;
+            };
+
+            return {
+              id: incident.id,
+              entryType: 'incident',
+              type: incident.behaviorText ? incident.behaviorText.split(', ') : [],
+              severity: intensityToSeverity(incident.intensity),
+              duration: formatDuration(incident.durationSec),
+              trigger: '',
+              notes: incident.notes || '',
+              consequence: [],
+              customConsequence: '',
+              date: timestamp.toISOString().split('T')[0],
+              time: timestamp.toTimeString().slice(0, 5)
+            };
+          }),
+          ...poops.map((poop: {
+            id: string;
+            timestamp: string;
+            consistency: string;
+            notes: string | null;
+          }) => {
+            const timestamp = new Date(poop.timestamp);
+            return {
+              id: poop.id,
+              entryType: 'poop',
+              consistency: poop.consistency,
+              notes: poop.notes || '',
+              date: timestamp.toISOString().split('T')[0],
+              time: timestamp.toTimeString().slice(0, 5)
+            };
+          }),
+          ...foods.map((food: {
+            id: string;
+            timestamp: string;
+            foodItem: string;
+            amountConsumed: string;
+            notes: string | null;
+          }) => {
+            const timestamp = new Date(food.timestamp);
+            return {
+              id: food.id,
+              entryType: 'food',
+              foodItem: food.foodItem,
+              amountConsumed: food.amountConsumed,
+              notes: food.notes || '',
+              date: timestamp.toISOString().split('T')[0],
+              time: timestamp.toTimeString().slice(0, 5)
+            };
+          })
+        ];
+
+        // Sort by date descending
+        allEntries.sort((a, b) => {
+          const dateA = new Date(`${a.date}T${a.time}`);
+          const dateB = new Date(`${b.date}T${b.time}`);
+          return dateB.getTime() - dateA.getTime();
         });
-        setEntries(convertedEntries);
+
+        setEntries(allEntries);
       }
     } catch (error) {
-      console.error('Error deleting incident:', error);
-      toast.error('Failed to delete incident');
+      console.error('Error deleting entry:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to delete entry: ${errorMessage}`);
     } finally {
       setDeleteDialogOpen(false);
       setEntryToDelete(null);
@@ -463,7 +1048,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -471,25 +1056,38 @@ export default function Home() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => {
-                    setFormData({...formData, entryType: 'incident'});
-                    setExpansionLevel('incident');
-                  }}
-                  className="py-8 px-4 rounded-lg border-2 border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50 text-lg font-semibold transition"
-                >
-                  Incident
-                </button>
-                <button
-                  onClick={() => {
-                    setFormData({...formData, entryType: 'poop'});
-                    setExpansionLevel('poop');
-                  }}
-                  className="py-8 px-4 rounded-lg border-2 border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50 text-lg font-semibold transition"
-                >
-                  Poop
-                </button>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setFormData({...formData, entryType: 'incident'});
+                      setExpansionLevel('incident');
+                    }}
+                    className="py-8 px-4 rounded-lg border-2 border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50 text-lg font-semibold transition"
+                  >
+                    Incident
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFormData({...formData, entryType: 'poop'});
+                      setExpansionLevel('poop');
+                    }}
+                    className="py-8 px-4 rounded-lg border-2 border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50 text-lg font-semibold transition"
+                  >
+                    Poop
+                  </button>
+                </div>
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => {
+                      setFormData({...formData, entryType: 'food'});
+                      setExpansionLevel('food');
+                    }}
+                    className="py-8 px-8 rounded-lg border-2 border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50 text-lg font-semibold transition"
+                  >
+                    Food
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -502,7 +1100,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -656,7 +1254,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setExpansionLevel('collapsed');
-                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', timestamp: new Date() });
+                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
                   }}
                   className="text-stone-50 hover:text-stone-200 transition"
                 >
@@ -690,6 +1288,85 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          {/* Level 2c: Food Form */}
+          {expansionLevel === 'food' && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-stone-50">Log Food</h3>
+                <button
+                  onClick={() => {
+                    setExpansionLevel('collapsed');
+                    setFormData({ entryType: '', type: [], severity: '', duration: '', durationSeconds: 0, trigger: '', notes: '', consistency: '', consequence: [], customConsequence: '', foodItem: '', amountConsumed: '', timestamp: new Date() });
+                  }}
+                  className="text-stone-50 hover:text-stone-200 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Date/Time Picker */}
+              <div>
+                <label className="text-sm font-medium text-stone-100 mb-2 block">Date & Time</label>
+                <DateTimePicker
+                  date={formData.timestamp}
+                  onChange={(date) => setFormData({...formData, timestamp: date})}
+                />
+              </div>
+
+              {/* Food Item */}
+              <div>
+                <label className="text-sm font-medium text-stone-100 mb-2 block">Food Item *</label>
+                <input
+                  type="text"
+                  value={formData.foodItem}
+                  onChange={(e) => setFormData({...formData, foodItem: e.target.value})}
+                  placeholder="e.g., Apple, Sandwich, Yogurt"
+                  className="w-full px-3 py-2 rounded-lg bg-stone-700 text-stone-100 border border-stone-600 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Amount Consumed */}
+              <div>
+                <label className="text-sm font-medium text-stone-100 mb-2 block">Amount Consumed *</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {['tried it', 'ate some', 'all of it'].map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => setFormData({...formData, amountConsumed: amount})}
+                      className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition ${
+                        formData.amountConsumed === amount
+                          ? 'border-stone-50 bg-stone-50 text-emerald-800'
+                          : 'border-emerald-600 bg-emerald-700/30 text-stone-100 hover:bg-emerald-700/50'
+                      }`}
+                    >
+                      {amount.charAt(0).toUpperCase() + amount.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-sm font-medium text-stone-100 mb-2 block">Notes (optional)</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  placeholder="Any additional notes..."
+                  className="w-full px-3 py-2 rounded-lg bg-stone-700 text-stone-100 border border-stone-600 focus:border-emerald-500 focus:outline-none"
+                  rows={3}
+                />
+              </div>
+
+              {/* Save Button */}
+              <button
+                onClick={() => handleFoodSubmit()}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-stone-50 rounded-lg font-semibold transition"
+              >
+                Save Food
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Recent Entries */}
@@ -700,21 +1377,27 @@ export default function Home() {
           </div>
 
           {isLoading ? (
-            <div className="text-center py-8 text-gray-600">Loading incidents...</div>
+            <div className="text-center py-8 text-gray-600">Loading entries...</div>
           ) : entries.length === 0 ? (
-            <div className="text-center py-8 text-gray-600">No incidents yet. Add your first one above!</div>
+            <div className="text-center py-8 text-gray-600">No entries yet. Add your first one above!</div>
           ) : null}
 
           {!isLoading && entries.map((entry) => (
             <div key={entry.id} className={`rounded-xl p-4 shadow-sm border ${
               entry.entryType === 'incident'
                 ? 'bg-stone-50 border-stone-200'
-                : 'bg-amber-50 border-amber-200'
+                : entry.entryType === 'poop'
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-emerald-50 border-emerald-200'
             }`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="font-semibold text-gray-900">
-                    {entry.entryType === 'incident' ? entry.type?.join(', ') : `Poop - ${entry.consistency}`}
+                    {entry.entryType === 'incident'
+                      ? entry.type?.join(', ')
+                      : entry.entryType === 'poop'
+                      ? `Poop - ${entry.consistency}`
+                      : `Food - ${entry.foodItem}`}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-gray-600 flex items-center gap-1">
@@ -735,6 +1418,11 @@ export default function Home() {
                 {entry.entryType === 'poop' && (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                     Poop
+                  </span>
+                )}
+                {entry.entryType === 'food' && (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    Food
                   </span>
                 )}
               </div>
@@ -766,15 +1454,64 @@ export default function Home() {
                   {entry.notes && (
                     <div className="pt-2 border-t border-stone-200 flex items-start justify-between gap-2">
                       <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
-                      {entry.entryType === 'incident' && (
-                        <button
-                          onClick={() => handleDeleteClick(entry.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 transition flex-shrink-0"
-                          aria-label="Delete incident"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleDeleteClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition flex-shrink-0"
+                        aria-label="Delete incident"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {entry.entryType === 'poop' && (
+                <div className="space-y-2 text-sm">
+                  {entry.notes && (
+                    <div className="pt-2 border-t border-amber-200 flex items-start justify-between gap-2">
+                      <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
+                      <button
+                        onClick={() => handleDeleteClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition flex-shrink-0"
+                        aria-label="Delete poop entry"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {entry.entryType === 'food' && (
+                <div className="space-y-2 text-sm">
+                  {entry.amountConsumed && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600 w-24">Amount:</span>
+                      <span className="text-gray-900 font-medium">{entry.amountConsumed}</span>
+                    </div>
+                  )}
+                  {entry.notes && (
+                    <div className="pt-2 border-t border-emerald-200 flex items-start justify-between gap-2">
+                      <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
+                      <button
+                        onClick={() => handleDeleteClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition flex-shrink-0"
+                        aria-label="Delete food entry"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  {!entry.notes && (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => handleDeleteClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition"
+                        aria-label="Delete food entry"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -788,9 +1525,16 @@ export default function Home() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Incident</DialogTitle>
+            <DialogTitle>
+              {(() => {
+                const entryToRemove = entries.find(e => e.id === entryToDelete);
+                if (entryToRemove?.entryType === 'poop') return 'Delete Poop Entry';
+                if (entryToRemove?.entryType === 'food') return 'Delete Food Entry';
+                return 'Delete Incident';
+              })()}
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this incident? This action cannot be undone.
+              Are you sure you want to delete this entry? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
