@@ -65,6 +65,40 @@ export async function PATCH(
   }
 }
 
+// PUT /api/foods/[id] - Update a food entry (simple update from UI)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {};
+    
+    if (body.foodItem !== undefined) data.foodItem = body.foodItem;
+    if (body.amountConsumed !== undefined) data.amountConsumed = body.amountConsumed;
+    if (body.notes !== undefined) data.notes = body.notes;
+
+    const food = await prisma.food.update({
+      where: { id },
+      data,
+      include: {
+        child: true,
+      },
+    });
+
+    return NextResponse.json(food);
+  } catch (error) {
+    console.error('Error updating food entry:', error);
+    return NextResponse.json(
+      { error: 'Failed to update food entry' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/foods/[id] - Delete a food entry
 export async function DELETE(
   request: NextRequest,

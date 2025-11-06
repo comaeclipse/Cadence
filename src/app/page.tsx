@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Calendar, Clock, X, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Clock, X, Trash2, Pencil } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { DurationPicker } from '@/components/ui/duration-picker';
@@ -141,6 +141,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
 
   const [formData, setFormData] = useState({
     entryType: '' as EntryType | '',
@@ -587,6 +589,14 @@ export default function Home() {
       setEntries(oldEntries);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(`Failed to save food: ${errorMessage}`);
+    }
+  };
+
+  const handleEditClick = (entryId: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    if (entry) {
+      setEntryToEdit(entry);
+      setEditDialogOpen(true);
     }
   };
 
@@ -1112,13 +1122,22 @@ export default function Home() {
                   {entry.notes && (
                     <div className="pt-2 border-t border-stone-200 flex items-start justify-between gap-2">
                       <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
-                      <button
-                        onClick={() => handleDeleteClick(entry.id)}
-                        className="p-1 text-gray-400 hover:text-red-600 transition flex-shrink-0"
-                        aria-label="Delete incident"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => handleEditClick(entry.id)}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition"
+                          aria-label="Edit incident"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(entry.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 transition"
+                          aria-label="Delete incident"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1129,13 +1148,22 @@ export default function Home() {
                   {entry.notes && (
                     <div className="pt-2 border-t border-amber-200 flex items-start justify-between gap-2">
                       <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
-                      <button
-                        onClick={() => handleDeleteClick(entry.id)}
-                        className="p-1 text-gray-400 hover:text-red-600 transition flex-shrink-0"
-                        aria-label="Delete poop entry"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => handleEditClick(entry.id)}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition"
+                          aria-label="Edit poop entry"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(entry.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 transition"
+                          aria-label="Delete poop entry"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1152,17 +1180,33 @@ export default function Home() {
                   {entry.notes && (
                     <div className="pt-2 border-t border-emerald-200 flex items-start justify-between gap-2">
                       <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
-                      <button
-                        onClick={() => handleDeleteClick(entry.id)}
-                        className="p-1 text-gray-400 hover:text-red-600 transition flex-shrink-0"
-                        aria-label="Delete food entry"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => handleEditClick(entry.id)}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition"
+                          aria-label="Edit food entry"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(entry.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 transition"
+                          aria-label="Delete food entry"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   )}
                   {!entry.notes && (
-                    <div className="flex justify-end">
+                    <div className="flex gap-1 justify-end">
+                      <button
+                        onClick={() => handleEditClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition"
+                        aria-label="Edit food entry"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleDeleteClick(entry.id)}
                         className="p-1 text-gray-400 hover:text-red-600 transition"
@@ -1178,6 +1222,193 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Edit {entryToEdit?.entryType === 'poop' ? 'Poop Entry' : entryToEdit?.entryType === 'food' ? 'Food Entry' : 'Incident'}
+            </DialogTitle>
+            <DialogDescription>
+              Make changes to the entry below and click save.
+            </DialogDescription>
+          </DialogHeader>
+          {entryToEdit && (
+            <div className="space-y-4">
+              {/* Incident fields */}
+              {entryToEdit.entryType === 'incident' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <input
+                      type="text"
+                      value={entryToEdit.type?.join(', ') || ''}
+                      onChange={(e) => setEntryToEdit({ ...entryToEdit, type: e.target.value.split(',').map(s => s.trim()) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                    <select
+                      value={entryToEdit.severity || ''}
+                      onChange={(e) => setEntryToEdit({ ...entryToEdit, severity: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">Select severity</option>
+                      {severityLevels.map(level => (
+                        <option key={level} value={level}>{level}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                    <input
+                      type="text"
+                      value={entryToEdit.duration || ''}
+                      onChange={(e) => setEntryToEdit({ ...entryToEdit, duration: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Trigger</label>
+                    <input
+                      type="text"
+                      value={entryToEdit.trigger || ''}
+                      onChange={(e) => setEntryToEdit({ ...entryToEdit, trigger: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                </>
+              )}
+              
+              {/* Poop fields */}
+              {entryToEdit.entryType === 'poop' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Consistency</label>
+                  <select
+                    value={entryToEdit.consistency || ''}
+                    onChange={(e) => setEntryToEdit({ ...entryToEdit, consistency: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select consistency</option>
+                    {consistencyTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              {/* Food fields */}
+              {entryToEdit.entryType === 'food' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Food Item</label>
+                    <input
+                      type="text"
+                      value={entryToEdit.foodItem || ''}
+                      onChange={(e) => setEntryToEdit({ ...entryToEdit, foodItem: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount Consumed</label>
+                    <input
+                      type="text"
+                      value={entryToEdit.amountConsumed || ''}
+                      onChange={(e) => setEntryToEdit({ ...entryToEdit, amountConsumed: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                </>
+              )}
+              
+              {/* Common notes field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={entryToEdit.notes || ''}
+                  onChange={(e) => setEntryToEdit({ ...entryToEdit, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <button
+              onClick={() => setEditDialogOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (!entryToEdit) return;
+                
+                try {
+                  let endpoint = '';
+                  let body = {};
+                  
+                  // Construct API request based on entry type
+                  if (entryToEdit.entryType === 'incident') {
+                    endpoint = `/api/incidents/${entryToEdit.id}`;
+                    body = {
+                      type: entryToEdit.type,
+                      severity: entryToEdit.severity,
+                      duration: entryToEdit.duration,
+                      trigger: entryToEdit.trigger,
+                      notes: entryToEdit.notes,
+                    };
+                  } else if (entryToEdit.entryType === 'poop') {
+                    endpoint = `/api/poops/${entryToEdit.id}`;
+                    body = {
+                      consistency: entryToEdit.consistency,
+                      notes: entryToEdit.notes,
+                    };
+                  } else if (entryToEdit.entryType === 'food') {
+                    endpoint = `/api/foods/${entryToEdit.id}`;
+                    body = {
+                      foodItem: entryToEdit.foodItem,
+                      amountConsumed: entryToEdit.amountConsumed,
+                      notes: entryToEdit.notes,
+                    };
+                  }
+                  
+                  const response = await fetch(endpoint, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error('Failed to update entry');
+                  }
+                  
+                  toast.success('Entry updated successfully');
+                  
+                  // Reload entries
+                  const reloadResponse = await fetch('/api/entries');
+                  if (reloadResponse.ok) {
+                    const { incidents, poops, foods } = await reloadResponse.json();
+                    const allEntries = convertApiResponseToEntries(incidents, poops, foods);
+                    setEntries(allEntries);
+                  }
+                  
+                  setEditDialogOpen(false);
+                  setEntryToEdit(null);
+                } catch (error) {
+                  console.error('Error updating entry:', error);
+                  toast.error('Failed to update entry');
+                }
+              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition"
+            >
+              Save
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

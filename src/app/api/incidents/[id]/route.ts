@@ -94,6 +94,59 @@ export async function PATCH(
   }
 }
 
+// PUT /api/incidents/[id] - Update an incident (simple update from UI)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    // Build update data object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {};
+
+    if (body.notes !== undefined) data.notes = body.notes;
+    if (body.trigger !== undefined) data.locationText = body.trigger;
+    if (body.duration !== undefined) data.durationSec = body.duration ? parseInt(body.duration) || 0 : null;
+    if (body.severity !== undefined) {
+      // Convert severity to intensity
+      const severityMap: { [key: string]: number } = {
+        'Low': 2,
+        'Medium': 3,
+        'High': 5
+      };
+      data.intensity = severityMap[body.severity] || 3;
+    }
+    if (body.type !== undefined && Array.isArray(body.type)) {
+      data.behaviorText = body.type.join(', ');
+    }
+
+    const incident = await prisma.incident.update({
+      where: { id },
+      data,
+      include: {
+        child: true,
+        behaviors: true,
+        location: true,
+        antecedents: true,
+        consequences: true,
+        interventions: true,
+        attachments: true,
+      },
+    });
+
+    return NextResponse.json(incident);
+  } catch (error) {
+    console.error('Error updating incident:', error);
+    return NextResponse.json(
+      { error: 'Failed to update incident' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/incidents/[id] - Delete an incident
 export async function DELETE(
   request: NextRequest,
