@@ -22,7 +22,6 @@ const schema = z.object({
   behaviorIds: z.array(z.string()).optional(),
   behaviorText: z.string().optional(),
   consequenceIds: z.array(z.string()).optional(),
-  intensity: z.number().min(1).max(5),
   durationSec: z.string().optional(),
   latencySec: z.string().optional(),
   functionHypothesis: z.enum(["escape", "attention", "tangible", "sensory", "unknown"]),
@@ -41,7 +40,6 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
       behaviorIds: [],
       behaviorText: "",
       consequenceIds: [],
-      intensity: 3,
       functionHypothesis: "unknown",
       locationText: "",
       notes: "",
@@ -95,7 +93,6 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
           behaviorIds: values.behaviorIds,
           behaviorText: values.behaviorText,
           consequenceIds: values.consequenceIds,
-          intensity: values.intensity,
           durationSec: values.durationSec ? Number(values.durationSec) : undefined,
           latencySec: values.latencySec ? Number(values.latencySec) : undefined,
           functionHypothesis: values.functionHypothesis,
@@ -277,21 +274,7 @@ export function IncidentForm({ onSaved }: { onSaved?: (incident: Incident) => vo
           )}
         />
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <FormField
-            control={form.control}
-            name="intensity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Intensity: {field.value}</FormLabel>
-                <FormControl>
-                  <Slider min={1} max={5} step={1} value={[field.value]} onValueChange={(v) => field.onChange(v[0])} />
-                </FormControl>
-                <FormDescription>1=low, 5=high</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="durationSec"

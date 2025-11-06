@@ -110,15 +110,6 @@ export async function PUT(
     if (body.notes !== undefined) data.notes = body.notes;
     if (body.trigger !== undefined) data.locationText = body.trigger;
     if (body.duration !== undefined) data.durationSec = body.duration ? parseInt(body.duration) || 0 : null;
-    if (body.severity !== undefined) {
-      // Convert severity to intensity
-      const severityMap: { [key: string]: number } = {
-        'Low': 2,
-        'Medium': 3,
-        'High': 5
-      };
-      data.intensity = severityMap[body.severity] || 3;
-    }
     if (body.type !== undefined && Array.isArray(body.type)) {
       data.behaviorText = body.type.join(', ');
     }

@@ -7,7 +7,6 @@ interface IncidentWithRelations {
   child: { name: string };
   behaviors: Array<{ label: string }>;
   behaviorText?: string;
-  intensity: number;
   durationSec?: number;
   latencySec?: number;
   location?: { label: string };
@@ -76,8 +75,6 @@ const ABCDataSheet = React.forwardRef<HTMLDivElement, ABCDataSheetProps>(
       if (incident.behaviorText) {
         items.push(incident.behaviorText);
       }
-
-      items.push(`Intensity: ${incident.intensity}/5`);
 
       if (incident.durationSec) {
         items.push(`Duration: ${formatDuration(incident.durationSec)}`);

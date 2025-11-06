@@ -11,18 +11,6 @@ export default function TimelinePage() {
     db.incidents.orderBy('timestamp').reverse().toArray().then(setIncidents);
   }, []);
 
-  const getSeverityColor = (intensity: number) => {
-    if (intensity >= 4) return 'bg-red-100 text-red-800';
-    if (intensity >= 3) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-green-100 text-green-800';
-  };
-
-  const getSeverityLabel = (intensity: number) => {
-    if (intensity >= 4) return 'High';
-    if (intensity >= 3) return 'Medium';
-    return 'Low';
-  };
-
   return (
     <MobileLayout title="Timeline" subtitle="Chronological view of all incidents">
       <div className="p-4 space-y-4">
@@ -46,9 +34,6 @@ export default function TimelinePage() {
                   {new Date(i.timestamp).toLocaleString()}
                 </p>
               </div>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(i.intensity)}`}>
-                {getSeverityLabel(i.intensity)}
-              </span>
             </div>
 
             <div className="space-y-2 text-sm">
