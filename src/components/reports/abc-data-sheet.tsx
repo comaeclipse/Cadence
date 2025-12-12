@@ -203,6 +203,35 @@ const ABCDataSheet = React.forwardRef<HTMLDivElement, ABCDataSheetProps>(
             margin-bottom: 0;
           }
 
+          .notes-row {
+            border-top: 1px solid #e0e0e0;
+          }
+
+          .notes-cell {
+            padding: 8px !important;
+            background-color: #f9fafb;
+            font-size: 10px;
+            line-height: 1.5;
+            color: #374151;
+            border-left: 3px solid #2c3e50;
+          }
+
+          .notes-cell strong {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-right: 6px;
+          }
+
+          @media print {
+            .notes-row {
+              page-break-inside: avoid;
+            }
+
+            .notes-row td {
+              page-break-before: avoid;
+            }
+          }
+
           @media screen {
             .print-container {
               max-width: 1200px;
@@ -232,12 +261,11 @@ const ABCDataSheet = React.forwardRef<HTMLDivElement, ABCDataSheetProps>(
         <table className="abc-table">
           <thead>
             <tr>
-              <th style={{ width: '12%' }}>Date/Time</th>
-              <th style={{ width: '8%' }}>Child</th>
-              <th style={{ width: '22%' }}>Antecedent</th>
-              <th style={{ width: '22%' }}>Behavior</th>
-              <th style={{ width: '22%' }}>Consequence</th>
-              <th style={{ width: '14%' }}>Notes</th>
+              <th style={{ width: '14%' }}>Date/Time</th>
+              <th style={{ width: '10%' }}>Child</th>
+              <th style={{ width: '25%' }}>Antecedent</th>
+              <th style={{ width: '25%' }}>Behavior</th>
+              <th style={{ width: '26%' }}>Consequence</th>
             </tr>
           </thead>
           <tbody>
@@ -247,30 +275,36 @@ const ABCDataSheet = React.forwardRef<HTMLDivElement, ABCDataSheetProps>(
               const consequences = formatConsequences(incident);
 
               return (
-                <tr key={incident.id}>
-                  <td>{formatDateTime(incident.timestamp)}</td>
-                  <td>{incident.child.name}</td>
-                  <td className="abc-column">
-                    {antecedents.length > 0 ? (
-                      antecedents.map((item, idx) => <div key={idx}>• {item}</div>)
-                    ) : (
-                      <div>N/A</div>
-                    )}
-                  </td>
-                  <td className="abc-column">
-                    {behaviors.map((item, idx) => (
-                      <div key={idx}>• {item}</div>
-                    ))}
-                  </td>
-                  <td className="abc-column">
-                    {consequences.length > 0 ? (
-                      consequences.map((item, idx) => <div key={idx}>• {item}</div>)
-                    ) : (
-                      <div>N/A</div>
-                    )}
-                  </td>
-                  <td>{incident.notes || ''}</td>
-                </tr>
+                <React.Fragment key={incident.id}>
+                  <tr>
+                    <td>{formatDateTime(incident.timestamp)}</td>
+                    <td>{incident.child.name}</td>
+                    <td className="abc-column">
+                      {antecedents.length > 0 ? (
+                        antecedents.map((item, idx) => <div key={idx}>• {item}</div>)
+                      ) : (
+                        <div>N/A</div>
+                      )}
+                    </td>
+                    <td className="abc-column">
+                      {behaviors.map((item, idx) => (
+                        <div key={idx}>• {item}</div>
+                      ))}
+                    </td>
+                    <td className="abc-column">
+                      {consequences.length > 0 ? (
+                        consequences.map((item, idx) => <div key={idx}>• {item}</div>)
+                      ) : (
+                        <div>N/A</div>
+                      )}
+                    </td>
+                  </tr>
+                  <tr className="notes-row">
+                    <td colSpan={5} className="notes-cell">
+                      <strong>Notes:</strong> {incident.notes || 'None'}
+                    </td>
+                  </tr>
+                </React.Fragment>
               );
             })}
           </tbody>
