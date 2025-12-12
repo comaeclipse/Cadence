@@ -148,12 +148,10 @@ export function generateABCDataSheetPDF(
 
   const startY = addReportHeader(doc, 'ABC Data Sheet', options);
 
-  // Prepare table data in ABC format
-  const tableData = incidents.map((incident) => [
-    formatDateTime(incident.timestamp),
-    incident.child.name,
-    // Antecedent column
-    [
+  // Prepare table data in ABC format with nested notes rows
+  const tableData = incidents.flatMap((incident) => {
+    // Antecedent column data
+    const antecedentData = [
       ...incident.antecedents.map((a) => a.label),
       incident.location?.label || incident.locationText
         ? `Location: ${incident.location?.label || incident.locationText}`
@@ -166,39 +164,63 @@ export function generateABCDataSheetPDF(
         : '',
     ]
       .filter(Boolean)
-      .join('\n'),
-    // Behavior column
-    [
+      .join('\n');
+
+    // Behavior column data
+    const behaviorData = [
       ...incident.behaviors.map((b) => b.label),
       incident.behaviorText || '',
       incident.durationSec ? `Duration: ${formatDuration(incident.durationSec)}` : '',
     ]
       .filter(Boolean)
-      .join('\n'),
-    // Consequence column
-    [
+      .join('\n');
+
+    // Consequence column data
+    const consequenceData = [
       ...incident.consequences.map((c) => c.label),
       ...incident.interventions.map((i) => `Intervention: ${i.label}`),
       incident.functionHypothesis ? `Function: ${incident.functionHypothesis}` : '',
     ]
       .filter(Boolean)
-      .join('\n'),
-    incident.notes || '',
-  ]);
+      .join('\n');
+
+    return [
+      // Main data row
+      [
+        formatDateTime(incident.timestamp),
+        incident.child.name,
+        antecedentData || 'N/A',
+        behaviorData,
+        consequenceData || 'N/A',
+      ],
+      // Notes row (spans all columns)
+      [
+        {
+          content: `Notes: ${incident.notes || 'None'}`,
+          colSpan: 5,
+          styles: {
+            fillColor: [249, 250, 251],
+            fontSize: 8,
+            cellPadding: { top: 4, right: 4, bottom: 4, left: 8 },
+            fontStyle: 'normal',
+          },
+        },
+      ],
+    ];
+  });
 
   autoTable(doc, {
-    head: [['Date/Time', 'Child', 'Antecedent', 'Behavior', 'Consequence', 'Notes']],
+    head: [['Date/Time', 'Child', 'Antecedent', 'Behavior', 'Consequence']],
     body: tableData,
     startY,
     styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' },
     headStyles: { fillColor: [44, 62, 80], fontStyle: 'bold' },
     columnStyles: {
-      0: { cellWidth: 30 },
-      1: { cellWidth: 25 },
-      2: { cellWidth: 35 },
-      3: { cellWidth: 35 },
-      4: { cellWidth: 35 },
-      5: { cellWidth: 30 },
+      0: { cellWidth: 28 },
+      1: { cellWidth: 20 },
+      2: { cellWidth: 44 },
+      3: { cellWidth: 44 },
+      4: { cellWidth: 44 },
     },
     margin: { top: startY, left: 10, right: 10 },
   });
