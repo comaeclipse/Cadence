@@ -9,7 +9,6 @@ interface IncidentWithRelations {
   child: { name: string };
   behaviors: Array<{ label: string }>;
   behaviorText?: string;
-  intensity: number;
   durationSec?: number;
   latencySec?: number;
   location?: { label: string };
@@ -94,7 +93,6 @@ export function generateDetailedLogPDF(
     formatDateTime(incident.timestamp),
     incident.child.name,
     incident.behaviors.map((b) => b.label).join(', ') || incident.behaviorText || 'N/A',
-    incident.intensity.toString(),
     formatDuration(incident.durationSec),
     incident.antecedents.map((a) => a.label).join(', ') || 'N/A',
     incident.consequences.map((c) => c.label).join(', ') || 'N/A',
@@ -110,7 +108,6 @@ export function generateDetailedLogPDF(
         'Date/Time',
         'Child',
         'Behavior',
-        'Intensity',
         'Duration',
         'Antecedents',
         'Consequences',
@@ -127,15 +124,14 @@ export function generateDetailedLogPDF(
     columnStyles: {
       0: { cellWidth: 30 },
       1: { cellWidth: 20 },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 12 },
-      4: { cellWidth: 15 },
+      2: { cellWidth: 35 },
+      3: { cellWidth: 15 },
+      4: { cellWidth: 28 },
       5: { cellWidth: 25 },
       6: { cellWidth: 25 },
-      7: { cellWidth: 25 },
+      7: { cellWidth: 20 },
       8: { cellWidth: 20 },
-      9: { cellWidth: 18 },
-      10: { cellWidth: 30 },
+      9: { cellWidth: 32 },
     },
     margin: { top: startY, left: 14, right: 14 },
   });
@@ -175,7 +171,6 @@ export function generateABCDataSheetPDF(
     [
       ...incident.behaviors.map((b) => b.label),
       incident.behaviorText || '',
-      `Intensity: ${incident.intensity}`,
       incident.durationSec ? `Duration: ${formatDuration(incident.durationSec)}` : '',
     ]
       .filter(Boolean)
