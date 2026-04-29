@@ -128,7 +128,7 @@ export default function LoginPage() {
               autoCapitalize="none"
               autoCorrect="off"
               required
-              className="w-full px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+              className="w-full px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-gray-900 text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
             />
           </div>
 
@@ -144,7 +144,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={isLogin ? '••••••' : 'Min. 6 characters'}
                 required
-                className="w-full px-3 py-2.5 pr-10 rounded-xl border border-stone-200 bg-stone-50 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                className="w-full px-3 py-2.5 pr-10 rounded-xl border border-stone-200 bg-stone-50 text-gray-900 text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
               />
               <button
                 type="button"

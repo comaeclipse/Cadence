@@ -30,9 +30,17 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
-!.env.example
+
+# shadcn/ui local CLI config
+components.json
+
+# capacitor (legacy, not in use)
+capacitor.config.ts
+
+# local Claude Code settings
+.claude/
 
 # prisma
 /prisma/*.db

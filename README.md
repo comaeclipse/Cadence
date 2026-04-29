@@ -12,14 +12,19 @@ Cadence is designed for parents, caregivers, therapists, and behavior analysts t
 
 ## Features
 
-- **Multi-Level Entry System**: Expandable "add..." button that reveals Incident or Poop logging options
-- **Behavioral Incident Tracking**: Log behavior type, severity, duration, trigger, consequence, and notes
+- **Multi-User Authentication**: Secure login/registration with per-user data isolation and 7-day session expiry
+- **AES-256-GCM Encryption**: Server-side encryption for sensitive entry fields
+- **Multi-Level Entry System**: Expandable "add..." button revealing Incident, Poop, and Food logging options
+- **Behavioral Incident Tracking**: Log behavior type, duration, trigger, consequence, and notes
 - **Poop Event Tracking**: Quick-log consistency types (Soft, Normal, Hard, Formed, Loose, Watery)
-- **Auto-Scroll UX**: Smart form navigation that scrolls to next relevant section
-- **Calendar View**: Visual month view with incident highlighting
+- **Food Tracking**: Log meals and food events with database persistence
+- **Edit & Delete**: Full CRUD on all entries with confirmation dialogs
+- **Stopwatch Timer**: Built-in nav bar stopwatch for timing incidents and handoffs
+- **Calendar View**: Visual month view with incident highlighting and day-level drill-down
+- **PDF Export**: ABC Data Sheet and detailed incident report generation
 - **Child Profiles**: Support for multiple children with easy switching
 - **Real-time Toast Notifications**: Immediate feedback for user actions
-- **Responsive Design**: Works seamlessly across desktop and mobile devices
+- **Mobile-First Design**: iOS-style interface with bottom tab navigation
 
 ## Tech Stack
 
@@ -56,7 +61,7 @@ Cadence is designed for parents, caregivers, therapists, and behavior analysts t
 
 ### Legacy Dependencies (Not Currently Used)
 - **Dexie** - Replaced by Prisma/PostgreSQL
-- **Capacitor** - Mobile app framework (web-only now)
+- **Capacitor** - Mobile app framework (web-only for now)
 
 ## Getting Started
 
@@ -79,15 +84,11 @@ cd Cadence/behavior-tracker
 npm install
 ```
 
-3. Set up environment variables:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your Neon database URLs:
+3. Set up environment variables — create a `.env` file in the project root:
 ```env
-DATABASE_URL="postgresql://..." # Pooled connection
+DATABASE_URL="postgresql://..."  # Pooled connection
 DIRECT_URL="postgresql://..."    # Direct connection (for migrations)
+SESSION_SECRET="your-secret"     # Secret for session token signing
 ```
 
 4. Initialize the database:
@@ -113,10 +114,18 @@ The app uses Prisma with the following main models:
 
 ## API Routes
 
-- `GET/POST /api/incidents` - List and create incidents
-- `GET/PATCH/DELETE /api/incidents/[id]` - Individual incident operations
-- `GET/POST /api/children` - Child profile management
-- `GET/POST /api/catalogs/[type]` - Catalog management (behaviors, antecedents, etc.)
+- `POST /api/auth/login` — Authenticate and issue session token
+- `POST /api/auth/register` — Create a new user account
+- `GET/POST /api/entries` — Consolidated entry listing
+- `GET/POST /api/incidents` — List and create incidents
+- `GET/PATCH/DELETE /api/incidents/[id]` — Individual incident operations
+- `GET/POST /api/poops` — Poop event tracking
+- `GET/PATCH/DELETE /api/poops/[id]` — Individual poop operations
+- `GET/POST /api/foods` — Food event tracking
+- `GET/PATCH/DELETE /api/foods/[id]` — Individual food operations
+- `GET/POST /api/children` — Child profile management
+- `GET/POST /api/catalogs/[type]` — Catalog management (behaviors, antecedents, etc.)
+- `GET /api/reports/data` — Aggregate data for PDF/report generation
 
 ## Deployment
 
@@ -133,11 +142,18 @@ Build uses production webpack (not turbopack) and generates Prisma Client automa
 
 - [x] PostgreSQL integration with Prisma
 - [x] Multi-level add button UI
-- [x] Poop event tracking
+- [x] Poop and food event tracking
 - [x] Consequence field with custom input
-- [ ] Advanced analytics and reports
-- [ ] Data export (CSV, PDF)
-- [ ] Multi-user authentication
+- [x] Multi-select behaviors and consequences
+- [x] Edit and delete entries
+- [x] PDF export (ABC Data Sheet, detailed incident report)
+- [x] Multi-user authentication with session management
+- [x] Per-user data isolation
+- [x] AES-256-GCM server-side field encryption
+- [x] 7-day session expiry
+- [x] Stopwatch timer for incident handoffs
+- [ ] Advanced analytics dashboard
+- [ ] Data export to CSV
 - [ ] Timeline view improvements
 - [ ] Catalog management UI
-- [ ] Mobile-optimized gestures
+- [ ] Push notifications / reminders
