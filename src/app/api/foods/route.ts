@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    console.log('Creating food entry with data:', JSON.stringify(body, null, 2));
 
     const child = await prisma.child.findFirst({
       where: { id: body.childId, userId: session.userId },
@@ -57,8 +56,6 @@ export async function POST(request: NextRequest) {
 
     // Only add optional fields if they have values
     if (body.notes) data.notes = body.notes;
-
-    console.log('Prisma create data:', JSON.stringify(data, null, 2));
 
     const food = await prisma.food.create({
       data: encryptFoodFields(data),

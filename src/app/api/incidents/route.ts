@@ -46,7 +46,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    console.log('Creating incident with data:', JSON.stringify(body, null, 2));
 
     // Verify the child belongs to the authenticated user
     const child = await prisma.child.findFirst({
@@ -93,8 +92,6 @@ export async function POST(request: NextRequest) {
         connect: body.interventionIds.map((id: string) => ({ id })),
       };
     }
-
-    console.log('Prisma create data:', JSON.stringify(data, null, 2));
 
     const incident = await prisma.incident.create({
       data: encryptIncidentFields(data),
