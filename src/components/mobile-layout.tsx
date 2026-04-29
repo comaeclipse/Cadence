@@ -3,8 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Calendar, TrendingUp, ChevronRight } from 'lucide-react';
+import { Calendar, TrendingUp, ChevronRight, Timer } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
+import { StopwatchModal } from '@/components/ui/stopwatch-modal';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ const NAV_ROUTES = ['/', '/calendar', '/reports', '/settings'];
 export function MobileLayout({ children, title = "Behavior Tracker", subtitle = "Understanding patterns together" }: MobileLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [stopwatchOpen, setStopwatchOpen] = React.useState(false);
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {
@@ -50,7 +52,7 @@ export function MobileLayout({ children, title = "Behavior Tracker", subtitle = 
 
       {/* iOS Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-stone-50 border-t border-stone-200 safe-area-inset-bottom z-50">
-        <div className="grid grid-cols-4 gap-1 px-4 py-2">
+        <div className="grid grid-cols-5 gap-1 px-2 py-2">
           <Link 
             href="/" 
             className={`flex flex-col items-center justify-center py-2 ${
@@ -73,6 +75,13 @@ export function MobileLayout({ children, title = "Behavior Tracker", subtitle = 
             <Calendar className="w-6 h-6 mb-1" />
             <span className={`text-xs ${pathname === '/calendar' ? 'font-medium' : ''}`}>Calendar</span>
           </Link>
+          <button
+            onClick={() => setStopwatchOpen(true)}
+            className="flex flex-col items-center justify-center py-2 text-gray-400 hover:text-gray-600"
+          >
+            <Timer className="w-6 h-6 mb-1" />
+            <span className="text-xs">Timer</span>
+          </button>
           <Link 
             href="/reports" 
             className={`flex flex-col items-center justify-center py-2 ${
@@ -97,6 +106,8 @@ export function MobileLayout({ children, title = "Behavior Tracker", subtitle = 
           </Link>
         </div>
       </div>
+
+      <StopwatchModal open={stopwatchOpen} onOpenChange={setStopwatchOpen} />
 
       <style jsx global>{`
         @keyframes fadeIn {

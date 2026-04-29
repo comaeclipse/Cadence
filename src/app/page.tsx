@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams, useRouter as useNextRouter } from 'next/navigation';
 import { Plus, Calendar, Clock, X, Trash2, Pencil } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -154,6 +155,24 @@ export default function Home() {
   const behaviorTypes = ['Meltdown', 'Sensory Overload', 'Anxiety', 'Aggression', 'Self-Stimulation', 'Other'];
   const consistencyTypes = ['Soft', 'Normal', 'Hard', 'Formed', 'Loose', 'Watery'];
   const consequenceOptions = ['Gave attention', 'Break/help', 'Preferred item', 'Redirected', 'Ignored', 'Emotion cards', 'other/custom'];
+
+  const searchParams = useSearchParams();
+  const nextRouter = useNextRouter();
+
+  // Open incident form pre-filled from stopwatch handoff
+  useEffect(() => {
+    if (searchParams.get('openIncident') === 'true') {
+      const duration = parseInt(searchParams.get('duration') ?? '0', 10);
+      setFormData(prev => ({
+        ...prev,
+        entryType: 'incident',
+        durationSeconds: isNaN(duration) ? 0 : duration,
+        timestamp: new Date(),
+      }));
+      setExpansionLevel('incident');
+      nextRouter.replace('/');
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load entries from API on mount
   useEffect(() => {

@@ -51,6 +51,47 @@ export function DurationPicker({ value, onChange, placeholder = "Select duration
   const minuteOptions = Array.from({ length: 61 }, (_, i) => i); // 0-60 minutes
   const secondOptions = Array.from({ length: 60 }, (_, i) => i); // 0-59 seconds
 
+  const minuteScrollRef = React.useRef<HTMLDivElement>(null);
+  const secondScrollRef = React.useRef<HTMLDivElement>(null);
+  const minuteDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const secondDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const ROW_HEIGHT = 50;
+
+  const handleMinuteScroll = () => {
+    if (minuteDebounceRef.current) clearTimeout(minuteDebounceRef.current);
+    minuteDebounceRef.current = setTimeout(() => {
+      if (minuteScrollRef.current) {
+        const index = Math.round(minuteScrollRef.current.scrollTop / ROW_HEIGHT);
+        setMinutes(Math.min(index, 60));
+      }
+    }, 150);
+  };
+
+  const handleSecondScroll = () => {
+    if (secondDebounceRef.current) clearTimeout(secondDebounceRef.current);
+    secondDebounceRef.current = setTimeout(() => {
+      if (secondScrollRef.current) {
+        const index = Math.round(secondScrollRef.current.scrollTop / ROW_HEIGHT);
+        setSeconds(Math.min(index, 59));
+      }
+    }, 150);
+  };
+
+  // Scroll wheels to the current value when the popover opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        if (minuteScrollRef.current) {
+          minuteScrollRef.current.scrollTop = minutes * ROW_HEIGHT;
+        }
+        if (secondScrollRef.current) {
+          secondScrollRef.current.scrollTop = seconds * ROW_HEIGHT;
+        }
+      }, 0);
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -76,6 +117,8 @@ export function DurationPicker({ value, onChange, placeholder = "Select duration
               <div className="text-xs text-muted-foreground mb-1">Minutes</div>
               <div className="relative h-[150px] w-[80px] overflow-hidden">
                 <div
+                  ref={minuteScrollRef}
+                  onScroll={handleMinuteScroll}
                   className="absolute inset-0 overflow-y-auto snap-y snap-mandatory scrollbar-hide"
                   style={{
                     scrollbarWidth: 'none',
@@ -116,6 +159,8 @@ export function DurationPicker({ value, onChange, placeholder = "Select duration
               <div className="text-xs text-muted-foreground mb-1">Seconds</div>
               <div className="relative h-[150px] w-[80px] overflow-hidden">
                 <div
+                  ref={secondScrollRef}
+                  onScroll={handleSecondScroll}
                   className="absolute inset-0 overflow-y-auto snap-y snap-mandatory scrollbar-hide"
                   style={{
                     scrollbarWidth: 'none',
