@@ -116,10 +116,7 @@ export async function POST(request: NextRequest) {
       console.error('Error stack:', error.stack);
     }
     return NextResponse.json(
-      {
-        error: 'Failed to create incident',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to create incident' },
       { status: 500 }
     );
   }

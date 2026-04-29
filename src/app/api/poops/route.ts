@@ -73,10 +73,7 @@ export async function POST(request: NextRequest) {
       console.error('Error stack:', error.stack);
     }
     return NextResponse.json(
-      {
-        error: 'Failed to create poop entry',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to create poop entry' },
       { status: 500 }
     );
   }
