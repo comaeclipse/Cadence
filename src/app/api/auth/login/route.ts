@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { getSession } from '@/lib/session';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  if (!rateLimit(`login:${ip}`, 5, 15 * 60 * 1000)) {
+    return NextResponse.json(
+      { error: 'Too many login attempts. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const { username, password } = await request.json();
 
@@ -33,8 +43,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const session = await getSession();
+    session.userId = user.id;
+    session.username = user.username;
+    await session.save();
+
     return NextResponse.json({
-      message: 'Login successful',
       user: { id: user.id, username: user.username, createdAt: user.createdAt },
     });
   } catch (error) {

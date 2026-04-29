@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { encryptFoodFields, decryptFoodFields, decryptChildFields } from '@/lib/encryption';
+import { requireAuth } from '@/lib/session';
 
 // GET /api/foods - List all food entries
 export async function GET(request: NextRequest) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const childId = searchParams.get('childId');
+    const childId = request.nextUrl.searchParams.get('childId');
 
     const foods = await prisma.food.findMany({
-      where: childId ? { childId } : undefined,
+      where: childId
+        ? { childId, child: { userId: session.userId } }
+        : { child: { userId: session.userId } },
       include: {
         child: true,
       },
@@ -30,6 +35,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/foods - Create a new food entry
 export async function POST(request: NextRequest) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   try {
     const body = await request.json();
     console.log('Creating food entry with data:', JSON.stringify(body, null, 2));

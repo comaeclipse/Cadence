@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { decryptIncidentFields, decryptChildFields } from '@/lib/encryption';
+import { requireAuth } from '@/lib/session';
 
 // GET /api/reports/data - Fetch filtered incidents for reports
 export async function GET(request: NextRequest) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const childId = searchParams.get('childId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Build where clause with filters
+    // Build where clause — always scoped to the authenticated user
     const where: {
+      child?: { userId: string };
       childId?: string;
-      timestamp?: {
-        gte?: Date;
-        lt?: Date;
-      };
-    } = {};
+      timestamp?: { gte?: Date; lt?: Date };
+    } = { child: { userId: session.userId } };
 
     if (childId) {
       where.childId = childId;

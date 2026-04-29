@@ -5,29 +5,20 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 interface AuthUser {
   id: string;
   username: string;
-  createdAt: string;
-}
-
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const STORAGE_KEY = 'cadence_user';
-
-interface StoredSession {
-  user: AuthUser;
-  loginAt: number;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   login: (user: AuthUser) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   isLoading: true,
   login: () => {},
-  logout: () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -35,32 +26,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const session: StoredSession = JSON.parse(raw);
-        if (Date.now() - session.loginAt < SEVEN_DAYS_MS) {
-          setUser(session.user);
-        } else {
-          localStorage.removeItem(STORAGE_KEY); // expired
-        }
-      }
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    } finally {
-      setIsLoading(false);
-    }
+    // Hydrate auth state from the server session cookie
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => { if (data.user) setUser(data.user); })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const login = (userData: AuthUser) => {
-    setUser(userData);
-    const session: StoredSession = { user: userData, loginAt: Date.now() };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  };
+  const login = (userData: AuthUser) => setUser(userData);
 
-  const logout = () => {
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (

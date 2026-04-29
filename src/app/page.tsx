@@ -180,7 +180,7 @@ function HomeContent() {
   useEffect(() => {
     async function loadEntries() {
       try {
-        const response = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
+        const response = await fetch(`/api/entries`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch entries');
@@ -235,7 +235,7 @@ function HomeContent() {
       try {
         // Get or create default child
         console.log('Fetching children...');
-        const childResponse = await fetch(`/api/children?userId=${user?.id ?? ''}`);
+        const childResponse = await fetch(`/api/children`);
         let childId = '';
 
         if (!childResponse.ok) {
@@ -256,7 +256,7 @@ function HomeContent() {
           const createChildResponse = await fetch('/api/children', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: 'Default Child', userId: user?.id }),
+            body: JSON.stringify({ name: 'Default Child' }),
           });
 
           if (!createChildResponse.ok) {
@@ -326,7 +326,7 @@ function HomeContent() {
 
         // Reload all entries from database to stay in sync
         console.log('Reloading all entries from database...');
-        const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
+        const reloadResponse = await fetch(`/api/entries`);
 
         if (reloadResponse.ok) {
           const { incidents, poops, foods } = await reloadResponse.json();
@@ -372,7 +372,7 @@ function HomeContent() {
     try {
       // Get or create default child
       console.log('Fetching children...');
-      const childResponse = await fetch(`/api/children?userId=${user?.id ?? ''}`);
+      const childResponse = await fetch(`/api/children`);
       let childId = '';
 
       if (!childResponse.ok) {
@@ -393,7 +393,7 @@ function HomeContent() {
         const createChildResponse = await fetch('/api/children', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'Default Child', userId: user?.id }),
+          body: JSON.stringify({ name: 'Default Child' }),
         });
 
         if (!createChildResponse.ok) {
@@ -443,7 +443,7 @@ function HomeContent() {
 
       // Reload all entries from database to stay in sync
       console.log('Reloading all entries from database...');
-      const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
+      const reloadResponse = await fetch(`/api/entries`);
       if (reloadResponse.ok) {
         const { incidents, poops, foods } = await reloadResponse.json();
         console.log('Loaded entries:', incidents.length, poops.length, foods.length);
@@ -495,7 +495,7 @@ function HomeContent() {
     try {
       // Get or create default child
       console.log('Fetching children...');
-      const childResponse = await fetch(`/api/children?userId=${user?.id ?? ''}`);
+      const childResponse = await fetch(`/api/children`);
       let childId = '';
 
       if (!childResponse.ok) {
@@ -516,7 +516,7 @@ function HomeContent() {
         const createChildResponse = await fetch('/api/children', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'Default Child', userId: user?.id }),
+          body: JSON.stringify({ name: 'Default Child' }),
         });
 
         if (!createChildResponse.ok) {
@@ -567,7 +567,7 @@ function HomeContent() {
 
       // Reload all entries from database to stay in sync
       console.log('Reloading all entries from database...');
-      const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
+      const reloadResponse = await fetch(`/api/entries`);
       if (reloadResponse.ok) {
         const { incidents, poops, foods } = await reloadResponse.json();
         console.log('Loaded entries:', incidents.length, poops.length, foods.length);
@@ -643,7 +643,7 @@ function HomeContent() {
       toast.success(`${entryType} deleted successfully`);
 
       // Reload all entries from database
-      const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
+      const reloadResponse = await fetch(`/api/entries`);
       if (reloadResponse.ok) {
         const { incidents, poops, foods } = await reloadResponse.json();
         const allEntries = convertApiResponseToEntries(incidents, poops, foods);
@@ -1339,7 +1339,7 @@ function HomeContent() {
                   toast.success('Entry updated successfully');
                   
                   // Reload entries
-                  const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
+                  const reloadResponse = await fetch(`/api/entries`);
                   if (reloadResponse.ok) {
                     const { incidents, poops, foods } = await reloadResponse.json();
                     const allEntries = convertApiResponseToEntries(incidents, poops, foods);

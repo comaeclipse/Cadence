@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { encryptChildFields, decryptChildFields } from '@/lib/encryption';
+import { requireAuth } from '@/lib/session';
 
 // GET /api/children - List all children
 export async function GET(request: NextRequest) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  // suppress unused param warning — request kept for Next.js signature compatibility
+  void request;
+
   try {
-    const userId = request.nextUrl.searchParams.get('userId');
     const children = await prisma.child.findMany({
-      where: userId ? { userId } : undefined,
+      where: { userId: session.userId },
       orderBy: {
         name: 'asc',
       },
@@ -25,6 +31,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/children - Create a new child
 export async function POST(request: NextRequest) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
   try {
     const body = await request.json();
 
@@ -33,7 +42,7 @@ export async function POST(request: NextRequest) {
         name: body.name,
         dob: body.dob ? new Date(body.dob) : undefined,
         avatarUrl: body.avatarUrl,
-        userId: body.userId ?? undefined,
+        userId: session.userId,
       }),
     });
 

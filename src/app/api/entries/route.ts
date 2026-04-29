@@ -6,21 +6,21 @@ import {
   decryptPoopFields,
   decryptChildFields,
 } from '@/lib/encryption';
+import { requireAuth } from '@/lib/session';
 
 // GET /api/entries - Get all entries (incidents, poops, foods) in one call
 export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const childId = searchParams.get('childId');
-    const userId = searchParams.get('userId');
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
-    // Build base where clause scoped to user
-    const userFilter = userId ? { child: { userId } } : undefined;
+  try {
+    const childId = request.nextUrl.searchParams.get('childId');
+    const userFilter = { child: { userId: session.userId } };
 
     // Fetch all entry types using a single transaction to avoid exhausting the connection pool
     const [incidents, poops, foods] = await prisma.$transaction([
       prisma.incident.findMany({
-        where: childId ? { childId } : userFilter,
+        where: childId ? { childId, child: { userId: session.userId } } : userFilter,
         include: {
           child: true,
           behaviors: true,
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.poop.findMany({
-        where: childId ? { childId } : userFilter,
+        where: childId ? { childId, child: { userId: session.userId } } : userFilter,
         include: {
           child: true,
         },
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.food.findMany({
-        where: childId ? { childId } : userFilter,
+        where: childId ? { childId, child: { userId: session.userId } } : userFilter,
         include: {
           child: true,
         },

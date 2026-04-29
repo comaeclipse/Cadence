@@ -65,7 +65,7 @@ export default function LoginPage() {
             Back to App
           </button>
           <button
-            onClick={() => { logout(); router.push('/login'); }}
+            onClick={() => logout().then(() => router.push('/login'))}
             className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-gray-700 font-medium text-sm rounded-xl transition-colors"
           >
             Sign Out
