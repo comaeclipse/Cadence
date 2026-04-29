@@ -6,11 +6,15 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const childId = searchParams.get('childId');
+    const userId = searchParams.get('userId');
+
+    // Build base where clause scoped to user
+    const userFilter = userId ? { child: { userId } } : undefined;
 
     // Fetch all entry types using a single transaction to avoid exhausting the connection pool
     const [incidents, poops, foods] = await prisma.$transaction([
       prisma.incident.findMany({
-        where: childId ? { childId } : undefined,
+        where: childId ? { childId } : userFilter,
         include: {
           child: true,
           behaviors: true,
@@ -25,7 +29,7 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.poop.findMany({
-        where: childId ? { childId } : undefined,
+        where: childId ? { childId } : userFilter,
         include: {
           child: true,
         },
@@ -34,7 +38,7 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.food.findMany({
-        where: childId ? { childId } : undefined,
+        where: childId ? { childId } : userFilter,
         include: {
           child: true,
         },

@@ -2,6 +2,7 @@
 
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { useSearchParams, useRouter as useNextRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import { Plus, Calendar, Clock, X, Trash2, Pencil } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -156,6 +157,7 @@ function HomeContent() {
   const consistencyTypes = ['Soft', 'Normal', 'Hard', 'Formed', 'Loose', 'Watery'];
   const consequenceOptions = ['Gave attention', 'Break/help', 'Preferred item', 'Redirected', 'Ignored', 'Emotion cards', 'other/custom'];
 
+  const { user } = useAuth();
   const searchParams = useSearchParams();
   const nextRouter = useNextRouter();
 
@@ -178,7 +180,7 @@ function HomeContent() {
   useEffect(() => {
     async function loadEntries() {
       try {
-        const response = await fetch('/api/entries');
+        const response = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch entries');
@@ -195,7 +197,7 @@ function HomeContent() {
     }
 
     loadEntries();
-  }, []);
+  }, [user]);
 
   const handleSubmit = async () => {
     if (formData.entryType === 'incident' && formData.type.length > 0) {
@@ -233,7 +235,7 @@ function HomeContent() {
       try {
         // Get or create default child
         console.log('Fetching children...');
-        const childResponse = await fetch('/api/children');
+        const childResponse = await fetch(`/api/children?userId=${user?.id ?? ''}`);
         let childId = '';
 
         if (!childResponse.ok) {
@@ -254,7 +256,7 @@ function HomeContent() {
           const createChildResponse = await fetch('/api/children', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: 'Default Child' }),
+            body: JSON.stringify({ name: 'Default Child', userId: user?.id }),
           });
 
           if (!createChildResponse.ok) {
@@ -324,7 +326,7 @@ function HomeContent() {
 
         // Reload all entries from database to stay in sync
         console.log('Reloading all entries from database...');
-        const reloadResponse = await fetch('/api/entries');
+        const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
 
         if (reloadResponse.ok) {
           const { incidents, poops, foods } = await reloadResponse.json();
@@ -370,7 +372,7 @@ function HomeContent() {
     try {
       // Get or create default child
       console.log('Fetching children...');
-      const childResponse = await fetch('/api/children');
+      const childResponse = await fetch(`/api/children?userId=${user?.id ?? ''}`);
       let childId = '';
 
       if (!childResponse.ok) {
@@ -391,7 +393,7 @@ function HomeContent() {
         const createChildResponse = await fetch('/api/children', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'Default Child' }),
+          body: JSON.stringify({ name: 'Default Child', userId: user?.id }),
         });
 
         if (!createChildResponse.ok) {
@@ -441,7 +443,7 @@ function HomeContent() {
 
       // Reload all entries from database to stay in sync
       console.log('Reloading all entries from database...');
-      const reloadResponse = await fetch('/api/entries');
+      const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
       if (reloadResponse.ok) {
         const { incidents, poops, foods } = await reloadResponse.json();
         console.log('Loaded entries:', incidents.length, poops.length, foods.length);
@@ -493,7 +495,7 @@ function HomeContent() {
     try {
       // Get or create default child
       console.log('Fetching children...');
-      const childResponse = await fetch('/api/children');
+      const childResponse = await fetch(`/api/children?userId=${user?.id ?? ''}`);
       let childId = '';
 
       if (!childResponse.ok) {
@@ -514,7 +516,7 @@ function HomeContent() {
         const createChildResponse = await fetch('/api/children', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'Default Child' }),
+          body: JSON.stringify({ name: 'Default Child', userId: user?.id }),
         });
 
         if (!createChildResponse.ok) {
@@ -565,7 +567,7 @@ function HomeContent() {
 
       // Reload all entries from database to stay in sync
       console.log('Reloading all entries from database...');
-      const reloadResponse = await fetch('/api/entries');
+      const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
       if (reloadResponse.ok) {
         const { incidents, poops, foods } = await reloadResponse.json();
         console.log('Loaded entries:', incidents.length, poops.length, foods.length);
@@ -641,7 +643,7 @@ function HomeContent() {
       toast.success(`${entryType} deleted successfully`);
 
       // Reload all entries from database
-      const reloadResponse = await fetch('/api/entries');
+      const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
       if (reloadResponse.ok) {
         const { incidents, poops, foods } = await reloadResponse.json();
         const allEntries = convertApiResponseToEntries(incidents, poops, foods);
@@ -1337,7 +1339,7 @@ function HomeContent() {
                   toast.success('Entry updated successfully');
                   
                   // Reload entries
-                  const reloadResponse = await fetch('/api/entries');
+                  const reloadResponse = await fetch(`/api/entries?userId=${user?.id ?? ''}`);
                   if (reloadResponse.ok) {
                     const { incidents, poops, foods } = await reloadResponse.json();
                     const allEntries = convertApiResponseToEntries(incidents, poops, foods);

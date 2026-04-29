@@ -3,9 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Calendar, TrendingUp, ChevronRight, Timer } from 'lucide-react';
+import { Calendar, TrendingUp, ChevronRight, Timer, UserCircle } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { StopwatchModal } from '@/components/ui/stopwatch-modal';
+import { useAuth } from '@/lib/auth-context';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export function MobileLayout({ children, title = "Behavior Tracker", subtitle = 
   const pathname = usePathname();
   const router = useRouter();
   const [stopwatchOpen, setStopwatchOpen] = React.useState(false);
+  const { user } = useAuth();
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {
@@ -40,9 +42,23 @@ export function MobileLayout({ children, title = "Behavior Tracker", subtitle = 
   return (
     <div {...handlers} className="min-h-screen bg-stone-100 pb-20">
       {/* Header */}
-      <div className="bg-stone-50 border-b border-stone-200 px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-        <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
+      <div className="bg-stone-50 border-b border-stone-200 px-6 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+          <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
+        </div>
+        <button
+          onClick={() => router.push('/login')}
+          className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-emerald-600 transition-colors ml-4"
+          aria-label="Account"
+        >
+          <UserCircle className="w-7 h-7" />
+          {user && (
+            <span className="text-[10px] font-medium text-emerald-600 max-w-[60px] truncate">
+              {user.username}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Main Content */}
