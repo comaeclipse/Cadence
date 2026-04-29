@@ -29,7 +29,7 @@ Cadence is designed for parents, caregivers, therapists, and behavior analysts t
 ## Tech Stack
 
 ### Core Framework
-- **Next.js 15.5.5** - React framework with App Router
+- **Next.js 15.5.9** - React framework with App Router
 - **React 19.1.0** - UI library
 - **TypeScript 5** - Type-safe development
 
@@ -59,9 +59,8 @@ Cadence is designed for parents, caregivers, therapists, and behavior analysts t
 - **@tanstack/react-query** - Data fetching and caching
 - **next-themes** - Dark/light mode theming
 
-### Legacy Dependencies (Not Currently Used)
-- **Dexie** - Replaced by Prisma/PostgreSQL
-- **Capacitor** - Mobile app framework (web-only for now)
+### Partially Migrated
+- **Dexie** - IndexedDB wrapper; still used by Catalogs, Timeline, Children, and Reports pages pending full migration to the PostgreSQL API
 
 ## Getting Started
 

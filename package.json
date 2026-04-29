@@ -10,8 +10,6 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@capacitor/core": "^7.4.3",
-    "@capacitor/ios": "^7.4.3",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.17.1",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -48,7 +46,6 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.4.3",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
