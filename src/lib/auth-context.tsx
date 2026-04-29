@@ -8,6 +8,14 @@ interface AuthUser {
   createdAt: string;
 }
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const STORAGE_KEY = 'cadence_user';
+
+interface StoredSession {
+  user: AuthUser;
+  loginAt: number;
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
@@ -28,12 +36,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('cadence_user');
-      if (stored) {
-        setUser(JSON.parse(stored));
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const session: StoredSession = JSON.parse(raw);
+        if (Date.now() - session.loginAt < SEVEN_DAYS_MS) {
+          setUser(session.user);
+        } else {
+          localStorage.removeItem(STORAGE_KEY); // expired
+        }
       }
     } catch {
-      localStorage.removeItem('cadence_user');
+      localStorage.removeItem(STORAGE_KEY);
     } finally {
       setIsLoading(false);
     }
@@ -41,12 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (userData: AuthUser) => {
     setUser(userData);
-    localStorage.setItem('cadence_user', JSON.stringify(userData));
+    const session: StoredSession = { user: userData, loginAt: Date.now() };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('cadence_user');
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
