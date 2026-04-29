@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { decryptIncidentFields, decryptChildFields } from '@/lib/encryption';
 
 // GET /api/reports/data - Fetch filtered incidents for reports
 export async function GET(request: NextRequest) {
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(incidents);
+    return NextResponse.json(incidents.map(i => decryptIncidentFields({ ...i, child: decryptChildFields(i.child) })));
   } catch (error) {
     console.error('Error fetching report data:', error);
     return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { encryptPoopFields, decryptPoopFields, decryptChildFields } from '@/lib/encryption';
 
 // GET /api/poops - List all poop entries
 export async function GET(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(poops);
+    return NextResponse.json(poops.map(p => decryptPoopFields({ ...p, child: decryptChildFields(p.child) })));
   } catch (error) {
     console.error('Error fetching poops:', error);
     return NextResponse.json(
@@ -46,14 +47,14 @@ export async function POST(request: NextRequest) {
     console.log('Prisma create data:', JSON.stringify(data, null, 2));
 
     const poop = await prisma.poop.create({
-      data,
+      data: encryptPoopFields(data),
       include: {
         child: true,
       },
     });
 
     console.log('Poop entry created successfully:', poop.id);
-    return NextResponse.json(poop, { status: 201 });
+    return NextResponse.json(decryptPoopFields(poop), { status: 201 });
   } catch (error) {
     console.error('Error creating poop entry:', error);
     console.error('Error details:', JSON.stringify(error, null, 2));

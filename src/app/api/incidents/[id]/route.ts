@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { encryptIncidentFields, decryptIncidentFields, decryptChildFields } from '@/lib/encryption';
 
 // GET /api/incidents/[id] - Get a single incident
 export async function GET(
@@ -29,7 +30,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(incident);
+    return NextResponse.json(decryptIncidentFields({ ...incident, child: decryptChildFields(incident.child) }));
   } catch (error) {
     console.error('Error fetching incident:', error);
     return NextResponse.json(
@@ -50,7 +51,7 @@ export async function PATCH(
 
     const incident = await prisma.incident.update({
       where: { id },
-      data: {
+      data: encryptIncidentFields({
         timestamp: body.timestamp ? new Date(body.timestamp) : undefined,
         behaviorText: body.behaviorText,
         durationSec: body.durationSec,
@@ -71,7 +72,7 @@ export async function PATCH(
               set: body.consequenceIds.map((id: string) => ({ id })),
             }
           : undefined,
-      },
+      }),
       include: {
         child: true,
         behaviors: true,
@@ -83,7 +84,7 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(incident);
+    return NextResponse.json(decryptIncidentFields({ ...incident, child: decryptChildFields(incident.child) }));
   } catch (error) {
     console.error('Error updating incident:', error);
     return NextResponse.json(
@@ -115,7 +116,7 @@ export async function PUT(
 
     const incident = await prisma.incident.update({
       where: { id },
-      data,
+      data: encryptIncidentFields(data),
       include: {
         child: true,
         behaviors: true,
@@ -127,7 +128,7 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(incident);
+    return NextResponse.json(decryptIncidentFields({ ...incident, child: decryptChildFields(incident.child) }));
   } catch (error) {
     console.error('Error updating incident:', error);
     return NextResponse.json(

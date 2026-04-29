@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { encryptPoopFields, decryptPoopFields, decryptChildFields } from '@/lib/encryption';
 
 // GET /api/poops/[id] - Get a single poop entry
 export async function GET(
@@ -23,7 +24,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(poop);
+    return NextResponse.json(decryptPoopFields({ ...poop, child: decryptChildFields(poop.child) }));
   } catch (error) {
     console.error('Error fetching poop entry:', error);
     return NextResponse.json(
@@ -44,17 +45,17 @@ export async function PATCH(
 
     const poop = await prisma.poop.update({
       where: { id },
-      data: {
+      data: encryptPoopFields({
         timestamp: body.timestamp ? new Date(body.timestamp) : undefined,
         consistency: body.consistency,
         notes: body.notes,
-      },
+      }),
       include: {
         child: true,
       },
     });
 
-    return NextResponse.json(poop);
+    return NextResponse.json(decryptPoopFields({ ...poop, child: decryptChildFields(poop.child) }));
   } catch (error) {
     console.error('Error updating poop entry:', error);
     return NextResponse.json(
@@ -81,13 +82,13 @@ export async function PUT(
 
     const poop = await prisma.poop.update({
       where: { id },
-      data,
+      data: encryptPoopFields(data),
       include: {
         child: true,
       },
     });
 
-    return NextResponse.json(poop);
+    return NextResponse.json(decryptPoopFields({ ...poop, child: decryptChildFields(poop.child) }));
   } catch (error) {
     console.error('Error updating poop entry:', error);
     return NextResponse.json(

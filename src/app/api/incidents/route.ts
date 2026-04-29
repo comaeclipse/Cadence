@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { encryptIncidentFields, decryptIncidentFields, decryptChildFields } from '@/lib/encryption';
 
 // GET /api/incidents - List all incidents
 export async function GET(request: NextRequest) {
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(incidents);
+    return NextResponse.json(incidents.map(i => decryptIncidentFields({ ...i, child: decryptChildFields(i.child) })));
   } catch (error) {
     console.error('Error fetching incidents:', error);
     return NextResponse.json(
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
     console.log('Prisma create data:', JSON.stringify(data, null, 2));
 
     const incident = await prisma.incident.create({
-      data,
+      data: encryptIncidentFields(data),
       include: {
         child: true,
         behaviors: true,
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('Incident created successfully:', incident.id);
-    return NextResponse.json(incident, { status: 201 });
+    return NextResponse.json(decryptIncidentFields(incident), { status: 201 });
   } catch (error) {
     console.error('Error creating incident:', error);
     console.error('Error details:', JSON.stringify(error, null, 2));

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  decryptIncidentFields,
+  decryptFoodFields,
+  decryptPoopFields,
+  decryptChildFields,
+} from '@/lib/encryption';
 
 // GET /api/entries - Get all entries (incidents, poops, foods) in one call
 export async function GET(request: NextRequest) {
@@ -49,9 +55,9 @@ export async function GET(request: NextRequest) {
     ]);
 
     return NextResponse.json({
-      incidents,
-      poops,
-      foods,
+      incidents: incidents.map(i => decryptIncidentFields({ ...i, child: decryptChildFields(i.child) })),
+      poops: poops.map(p => decryptPoopFields({ ...p, child: decryptChildFields(p.child) })),
+      foods: foods.map(f => decryptFoodFields({ ...f, child: decryptChildFields(f.child) })),
     });
   } catch (error) {
     if (error instanceof Error) {

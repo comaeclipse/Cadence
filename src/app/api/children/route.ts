@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { encryptChildFields, decryptChildFields } from '@/lib/encryption';
 
 // GET /api/children - List all children
 export async function GET(request: NextRequest) {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(children);
+    return NextResponse.json(children.map(decryptChildFields));
   } catch (error) {
     console.error('Error fetching children:', error);
     return NextResponse.json(
@@ -28,15 +29,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const child = await prisma.child.create({
-      data: {
+      data: encryptChildFields({
         name: body.name,
         dob: body.dob ? new Date(body.dob) : undefined,
         avatarUrl: body.avatarUrl,
         userId: body.userId ?? undefined,
-      },
+      }),
     });
 
-    return NextResponse.json(child, { status: 201 });
+    return NextResponse.json(decryptChildFields(child), { status: 201 });
   } catch (error) {
     console.error('Error creating child:', error);
     return NextResponse.json(

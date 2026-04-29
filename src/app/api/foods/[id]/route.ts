@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { encryptFoodFields, decryptFoodFields, decryptChildFields } from '@/lib/encryption';
 
 // GET /api/foods/[id] - Get a single food entry
 export async function GET(
@@ -23,7 +24,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(food);
+    return NextResponse.json(decryptFoodFields({ ...food, child: decryptChildFields(food.child) }));
   } catch (error) {
     console.error('Error fetching food entry:', error);
     return NextResponse.json(
@@ -44,18 +45,18 @@ export async function PATCH(
 
     const food = await prisma.food.update({
       where: { id },
-      data: {
+      data: encryptFoodFields({
         timestamp: body.timestamp ? new Date(body.timestamp) : undefined,
         foodItem: body.foodItem,
         amountConsumed: body.amountConsumed,
         notes: body.notes,
-      },
+      }),
       include: {
         child: true,
       },
     });
 
-    return NextResponse.json(food);
+    return NextResponse.json(decryptFoodFields({ ...food, child: decryptChildFields(food.child) }));
   } catch (error) {
     console.error('Error updating food entry:', error);
     return NextResponse.json(
@@ -83,13 +84,13 @@ export async function PUT(
 
     const food = await prisma.food.update({
       where: { id },
-      data,
+      data: encryptFoodFields(data),
       include: {
         child: true,
       },
     });
 
-    return NextResponse.json(food);
+    return NextResponse.json(decryptFoodFields({ ...food, child: decryptChildFields(food.child) }));
   } catch (error) {
     console.error('Error updating food entry:', error);
     return NextResponse.json(
