@@ -105,9 +105,9 @@ export default function PrivacyPage() {
           in plaintext.
         </p>
         <p className="mt-3">
-          When you log in, a session is stored in your browser&apos;s local storage
-          and expires automatically after 7 days. No cookies are used for
-          authentication.
+          When you log in, a session cookie is set in your browser. It is
+          cryptographically signed and encrypted, marked <code>HttpOnly</code>{" "}
+          (inaccessible to JavaScript), and expires automatically after 7 days.
         </p>
       </section>
 
