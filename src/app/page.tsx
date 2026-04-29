@@ -1082,53 +1082,53 @@ function HomeContent() {
                       <span className="text-gray-900 font-medium">{entry.duration}</span>
                     </div>
                   )}
-                  {entry.notes && (
-                    <div className="pt-2 border-t border-stone-200 flex items-start justify-between gap-2">
-                      <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
-                      <div className="flex gap-1 flex-shrink-0">
-                        <button
-                          onClick={() => handleEditClick(entry.id)}
-                          className="p-1 text-gray-400 hover:text-blue-600 transition"
-                          aria-label="Edit incident"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(entry.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 transition"
-                          aria-label="Delete incident"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                  <div className="pt-2 border-t border-stone-200 flex items-start justify-between gap-2">
+                    {entry.notes
+                      ? <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
+                      : <span />}
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleEditClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition"
+                        aria-label="Edit incident"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition"
+                        aria-label="Delete incident"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
               {entry.entryType === 'poop' && (
                 <div className="space-y-2 text-sm">
-                  {entry.notes && (
-                    <div className="pt-2 border-t border-amber-200 flex items-start justify-between gap-2">
-                      <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
-                      <div className="flex gap-1 flex-shrink-0">
-                        <button
-                          onClick={() => handleEditClick(entry.id)}
-                          className="p-1 text-gray-400 hover:text-blue-600 transition"
-                          aria-label="Edit poop entry"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(entry.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 transition"
-                          aria-label="Delete poop entry"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                  <div className="pt-2 border-t border-amber-200 flex items-start justify-between gap-2">
+                    {entry.notes
+                      ? <p className="text-gray-700 text-xs flex-1">{entry.notes}</p>
+                      : <span />}
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleEditClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition"
+                        aria-label="Edit poop entry"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(entry.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition"
+                        aria-label="Delete poop entry"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
