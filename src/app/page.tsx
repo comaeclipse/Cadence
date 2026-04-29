@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { useSearchParams, useRouter as useNextRouter } from 'next/navigation';
 import { Plus, Calendar, Clock, X, Trash2, Pencil } from 'lucide-react';
 import { MobileLayout } from '@/components/mobile-layout';
@@ -73,7 +73,7 @@ interface ApiFood {
   [key: string]: unknown;
 }
 
-export default function Home() {
+function HomeContent() {
   const consequenceRef = useRef<HTMLDivElement>(null);
 
   // Helper function to convert API response to entries
@@ -1392,6 +1392,14 @@ export default function Home() {
         </DialogContent>
       </Dialog>
     </MobileLayout>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }
 
