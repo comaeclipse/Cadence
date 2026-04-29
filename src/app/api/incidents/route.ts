@@ -41,12 +41,18 @@ export async function GET(request: NextRequest) {
 
 // POST /api/incidents - Create a new incident
 export async function POST(request: NextRequest) {
-  const { error } = await requireAuth();
+  const { session, error } = await requireAuth();
   if (error) return error;
 
   try {
     const body = await request.json();
     console.log('Creating incident with data:', JSON.stringify(body, null, 2));
+
+    // Verify the child belongs to the authenticated user
+    const child = await prisma.child.findFirst({
+      where: { id: body.childId, userId: session.userId },
+    });
+    if (!child) return NextResponse.json({ error: 'Child not found.' }, { status: 404 });
 
     // Build data object without undefined values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
