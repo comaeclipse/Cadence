@@ -1,15 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { db } from "@/lib/db";
-import type { Incident } from "@/types/incident";
 import { MobileLayout } from "@/components/mobile-layout";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Bar } from "recharts";
 
+interface Incident {
+  id: string;
+  timestamp: string;
+}
+
 export default function ReportsPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
+
   useEffect(() => {
-    db.incidents.toArray().then(setIncidents);
+    fetch('/api/incidents')
+      .then(res => res.ok ? res.json() : [])
+      .then(setIncidents)
+      .catch(() => {});
   }, []);
 
   const byHour = useMemo(() => {
@@ -47,4 +54,3 @@ export default function ReportsPage() {
     </MobileLayout>
   );
 }
-

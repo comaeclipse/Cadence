@@ -1,19 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/db";
-import type { ChildProfile } from "@/types/incident";
 import { MobileLayout } from "@/components/mobile-layout";
-import { uid } from "@/lib/id";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 
+interface Child {
+  id: string;
+  name: string;
+}
+
 export default function ChildrenPage() {
-  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [children, setChildren] = useState<Child[]>([]);
   const [name, setName] = useState("");
 
   async function refresh() {
-    setChildren(await db.children.toArray());
+    const res = await fetch('/api/children');
+    if (res.ok) setChildren(await res.json());
   }
 
   useEffect(() => {
@@ -23,16 +26,25 @@ export default function ChildrenPage() {
   async function add() {
     const n = name.trim();
     if (!n) return;
-    await db.children.add({ id: uid(), name: n });
+
+    const res = await fetch('/api/children', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: n }),
+    });
+
+    if (!res.ok) { toast.error('Failed to add child'); return; }
+
     setName("");
     toast.success("Child added");
     refresh();
   }
 
   async function remove(id: string) {
-    await db.children.delete(id);
+    const res = await fetch(`/api/children/${id}`, { method: 'DELETE' });
+    if (!res.ok) { toast.error('Failed to remove child'); return; }
     toast.success("Child removed");
-    refresh();
+    setChildren(prev => prev.filter(c => c.id !== id));
   }
 
   return (
@@ -45,7 +57,6 @@ export default function ChildrenPage() {
           </span>
         </div>
 
-        {/* Add New Child */}
         <div className="bg-gradient-to-br from-emerald-700 to-emerald-800 rounded-xl p-4 shadow-lg">
           <h3 className="text-lg font-semibold text-stone-50 mb-3">Add New Child</h3>
           <div className="flex gap-2">
@@ -66,7 +77,6 @@ export default function ChildrenPage() {
           </div>
         </div>
 
-        {/* Children List */}
         <div className="space-y-3">
           {children.length === 0 && (
             <div className="bg-stone-50 rounded-xl p-8 shadow-sm border border-stone-200 text-center">
@@ -96,4 +106,3 @@ export default function ChildrenPage() {
     </MobileLayout>
   );
 }
-

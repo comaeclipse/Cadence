@@ -1,14 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/db";
-import type { Incident } from "@/types/incident";
 import { MobileLayout } from "@/components/mobile-layout";
+
+interface Incident {
+  id: string;
+  timestamp: string;
+  behaviorText?: string;
+  functionHypothesis?: string;
+  locationText?: string;
+  durationSec?: number;
+  notes?: string;
+}
 
 export default function TimelinePage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
+
   useEffect(() => {
-    db.incidents.orderBy('timestamp').reverse().toArray().then(setIncidents);
+    fetch('/api/incidents')
+      .then(res => res.ok ? res.json() : [])
+      .then(setIncidents)
+      .catch(() => {});
   }, []);
 
   return (
@@ -37,10 +49,12 @@ export default function TimelinePage() {
             </div>
 
             <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-600 w-20">Function:</span>
-                <span className="text-gray-900 font-medium capitalize">{i.functionHypothesis}</span>
-              </div>
+              {i.functionHypothesis && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600 w-20">Function:</span>
+                  <span className="text-gray-900 font-medium capitalize">{i.functionHypothesis}</span>
+                </div>
+              )}
               {i.locationText && (
                 <div className="flex items-center gap-2">
                   <span className="text-gray-600 w-20">Location:</span>
