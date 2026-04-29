@@ -1,35 +1,50 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/db";
-import type { CatalogItem } from "@/types/incident";
-import { uid } from "@/lib/id";
 import { Plus, X } from "lucide-react";
+import { MobileLayout } from "@/components/mobile-layout";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
-function CatalogEditor({ label, table, description }: { label: string; table: keyof typeof db; description: string }) {
+interface CatalogItem {
+  id: string;
+  label: string;
+}
+
+function CatalogEditor({ label, type, description }: { label: string; type: string; description: string }) {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [text, setText] = useState("");
+
   useEffect(() => {
-    (async () => {
-      // @ts-expect-error Dexie index signature
-      setItems(await db[table].toArray());
-    })();
-  }, [table]);
+    fetch(`/api/catalogs/${type}`)
+      .then(res => res.json())
+      .then(setItems)
+      .catch(() => toast.error(`Failed to load ${label.toLowerCase()}`));
+  }, [type, label]);
+
   async function add() {
     const t = text.trim();
     if (!t) return;
-    // @ts-expect-error Dexie index signature
-    await db[table].add({ id: uid(), label: t });
+
+    const res = await fetch(`/api/catalogs/${type}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: t }),
+    });
+
+    if (!res.ok) { toast.error('Failed to add item'); return; }
+
+    const item = await res.json();
+    setItems(prev => [...prev, item]);
     setText("");
-    // @ts-expect-error Dexie index signature
-    setItems(await db[table].toArray());
   }
+
   async function remove(id: string) {
-    // @ts-expect-error Dexie index signature
-    await db[table].delete(id);
-    // @ts-expect-error Dexie index signature
-    setItems(await db[table].toArray());
+    const res = await fetch(`/api/catalogs/${type}/${id}`, { method: 'DELETE' });
+    if (!res.ok) { toast.error('Failed to delete item'); return; }
+    setItems(prev => prev.filter(it => it.id !== id));
   }
+
   return (
     <div className="space-y-4">
       <div className="bg-gradient-to-br from-emerald-700 to-emerald-800 rounded-xl p-4 shadow-lg">
@@ -80,9 +95,6 @@ function CatalogEditor({ label, table, description }: { label: string; table: ke
   );
 }
 
-import { MobileLayout } from "@/components/mobile-layout";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
 export default function CatalogsPage() {
   return (
     <MobileLayout title="Behavior Catalogs" subtitle="Manage reusable items for quick logging">
@@ -95,25 +107,13 @@ export default function CatalogsPage() {
           </TabsList>
 
           <TabsContent value="behaviors">
-            <CatalogEditor
-              label="Behaviors"
-              table="behaviors"
-              description="Observable actions (hitting, yelling, eloping)"
-            />
+            <CatalogEditor label="Behaviors" type="behaviors" description="Observable actions (hitting, yelling, eloping)" />
           </TabsContent>
           <TabsContent value="antecedents">
-            <CatalogEditor
-              label="Antecedents"
-              table="antecedents"
-              description="Events that occur before the behavior"
-            />
+            <CatalogEditor label="Antecedents" type="antecedents" description="Events that occur before the behavior" />
           </TabsContent>
           <TabsContent value="locations">
-            <CatalogEditor
-              label="Locations"
-              table="locations"
-              description="Places where incidents occur"
-            />
+            <CatalogEditor label="Locations" type="locations" description="Places where incidents occur" />
           </TabsContent>
         </Tabs>
       </div>

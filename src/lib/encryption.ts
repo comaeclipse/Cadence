@@ -6,7 +6,14 @@ const TAG_LENGTH = 16;  // 128-bit auth tag
 
 function getKey(): Buffer | null {
   const hex = process.env.ENCRYPTION_KEY;
-  if (!hex || hex.length !== 64) return null;
+
+  if (!hex || hex.length !== 64) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('ENCRYPTION_KEY is not set or invalid. Data cannot be stored safely.');
+    }
+    return null; // dev/test: encryption is skipped, data stored as plaintext
+  }
+
   return Buffer.from(hex, 'hex');
 }
 
