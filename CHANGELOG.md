@@ -6,6 +6,25 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+### 2026-04-29 — Security Hardening & Account Management
+
+#### Added
+- Server-side session authentication with encrypted httpOnly cookies (iron-session)
+- Middleware enforcing authentication on all routes except `/login` and `/api/auth/*`
+- Ownership verification on all mutation endpoints — users can only modify their own data
+- Rate limiting on login (5 attempts / 15 min) and registration (3 attempts / hr) per IP
+- Logout endpoint that destroys the server-side session cookie
+- `/api/auth/me` endpoint for client session hydration without localStorage
+- Account deletion — permanently removes account and all associated data (password-confirmed)
+- Privacy policy page at `/privacy`
+
+#### Changed
+- Auth state now stored in a signed, encrypted server cookie instead of localStorage
+- Settings page updated: accurate data storage description, link to privacy policy, delete account UI
+- All API routes scoped to the authenticated user; catalog routes protected with `requireAuth`
+
+---
+
 ### 2026-04-29 — Auth, Encryption & Session Polish
 
 #### Added

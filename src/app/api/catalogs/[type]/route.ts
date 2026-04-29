@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/session';
 
 // GET /api/catalogs/[type] - List catalog items
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ type: string }> }
 ) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   try {
     const { type } = await params;
 
@@ -48,6 +52,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ type: string }> }
 ) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   try {
     const { type } = await params;
     const body = await request.json();

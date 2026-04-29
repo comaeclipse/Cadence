@@ -152,9 +152,11 @@ export default function PrivacyPage() {
         <h2 className="text-xl font-semibold mb-3">6. Data Deletion</h2>
         <p>
           You can delete individual records directly within the App at any time.
-          Deleted records are permanently removed and cannot be recovered. To
-          request deletion of all data associated with your account, please
-          contact us using the information in Section 9.
+          You can also permanently delete your entire account and all associated
+          data from <strong>Settings → Delete Account</strong>. Account deletion
+          requires password confirmation and immediately and irreversibly removes
+          all child profiles, observations, and logs tied to your account.
+          Deleted data cannot be recovered.
         </p>
       </section>
 
