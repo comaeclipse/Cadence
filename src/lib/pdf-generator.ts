@@ -199,10 +199,10 @@ export function generateABCDataSheetPDF(
           content: `Notes: ${incident.notes || 'None'}`,
           colSpan: 5,
           styles: {
-            fillColor: [249, 250, 251],
+            fillColor: [249, 250, 251] as [number, number, number],
             fontSize: 8,
             cellPadding: { top: 4, right: 4, bottom: 4, left: 8 },
-            fontStyle: 'normal',
+            fontStyle: 'normal' as const,
           },
         },
       ],
