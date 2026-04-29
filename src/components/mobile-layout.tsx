@@ -53,11 +53,6 @@ export function MobileLayout({ children, title = "Behavior Tracker", subtitle = 
           aria-label="Account"
         >
           <UserCircle className="w-7 h-7" />
-          {user && (
-            <span className="text-[10px] font-medium text-emerald-600 max-w-[60px] truncate">
-              {user.username}
-            </span>
-          )}
         </button>
       </div>
 
