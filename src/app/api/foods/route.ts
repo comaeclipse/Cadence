@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('Food entry created successfully:', food.id);
     return NextResponse.json(decryptFoodFields(food), { status: 201 });
   } catch (error) {
     console.error('Error creating food entry:', error);

@@ -63,7 +63,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('Poop entry created successfully:', poop.id);
     return NextResponse.json(decryptPoopFields(poop), { status: 201 });
   } catch (error) {
     console.error('Error creating poop entry:', error);

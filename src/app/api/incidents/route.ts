@@ -106,7 +106,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('Incident created successfully:', incident.id);
     return NextResponse.json(decryptIncidentFields(incident), { status: 201 });
   } catch (error) {
     console.error('Error creating incident:', error);
