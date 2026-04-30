@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { unsealData } from 'iron-session';
-import { SessionData, sessionOptions } from '@/lib/session';
+import { SessionData, SESSION_COOKIE_NAME, getSessionOptions } from '@/lib/session';
 
 const PUBLIC_PATHS = new Set(['/login', '/privacy']);
 
@@ -14,14 +14,13 @@ export async function proxy(request: NextRequest) {
   if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
 
   // Verify session cookie
-  const cookieValue = request.cookies.get(sessionOptions.cookieName)?.value;
+  const cookieValue = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   let isAuthenticated = false;
 
   if (cookieValue) {
     try {
-      const session = await unsealData<SessionData>(cookieValue, {
-        password: sessionOptions.password as string,
-      });
+      const { password } = getSessionOptions();
+      const session = await unsealData<SessionData>(cookieValue, { password });
       isAuthenticated = !!session.userId;
     } catch {
       // Invalid or tampered cookie — treat as unauthenticated
