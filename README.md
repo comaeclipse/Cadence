@@ -29,12 +29,12 @@ Cadence is designed for parents, caregivers, therapists, and behavior analysts t
 ## Tech Stack
 
 ### Core Framework
-- **Next.js 15.5.9** - React framework with App Router
-- **React 19.1.0** - UI library
-- **TypeScript 5** - Type-safe development
+- **Next.js 16.2.4** - React framework with App Router
+- **React 19.2.5** - UI library
+- **TypeScript 6** - Type-safe development
 
 ### Database & Backend
-- **Prisma 6.17** - Type-safe ORM
+- **Prisma 7.8** - Type-safe ORM
 - **Neon PostgreSQL** - Serverless Postgres database
 - **Next.js API Routes** - RESTful API endpoints
 
@@ -59,8 +59,6 @@ Cadence is designed for parents, caregivers, therapists, and behavior analysts t
 - **@tanstack/react-query** - Data fetching and caching
 - **next-themes** - Dark/light mode theming
 
-### Partially Migrated
-- **Dexie** - IndexedDB wrapper; still used by Catalogs, Timeline, Children, and Reports pages pending full migration to the PostgreSQL API
 
 ## Getting Started
 
@@ -75,7 +73,7 @@ Cadence is designed for parents, caregivers, therapists, and behavior analysts t
 1. Clone the repository:
 ```bash
 git clone https://github.com/comaeclipse/Cadence.git
-cd Cadence/behavior-tracker
+cd Cadence
 ```
 
 2. Install dependencies:
@@ -135,7 +133,7 @@ The app is configured for deployment on Vercel:
 3. Add environment variables in Vercel dashboard
 4. Deploy automatically on push to master branch
 
-Build uses production webpack (not turbopack) and generates Prisma Client automatically via `postinstall` script.
+Build uses Turbopack and generates Prisma Client automatically via `postinstall` script.
 
 ## Roadmap
 
