@@ -4,7 +4,7 @@ import { SessionData, sessionOptions } from '@/lib/session';
 
 const PUBLIC_PATHS = new Set(['/login', '/privacy']);
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Always allow auth API routes and static assets
