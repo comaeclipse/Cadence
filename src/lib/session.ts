@@ -7,8 +7,12 @@ export interface SessionData {
   username: string;
 }
 
+if (!process.env.SESSION_PASSWORD) {
+  throw new Error('SESSION_PASSWORD environment variable is not set');
+}
+
 export const sessionOptions: SessionOptions = {
-  password: process.env.SESSION_PASSWORD as string,
+  password: process.env.SESSION_PASSWORD,
   cookieName: 'cadence_session',
   cookieOptions: {
     httpOnly: true,
